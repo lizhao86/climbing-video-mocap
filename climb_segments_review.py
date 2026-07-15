@@ -58,10 +58,18 @@ def main():
         c = C_MOVE_D if s["kind"] == "move" else C_STAT_D
         bar[:, x0:x1] = c[::-1]  # BGR
 
+    events = seg.get("events", [])
+
     def seg_at(ts):
         for i, s in enumerate(segs):
             if ts <= s["end_s"]: return i, s
         return len(segs) - 1, segs[-1]
+
+    def limbs_at(ts):
+        """当前时刻正在换点的肢体（按位移大小排序），带 manual 标记。"""
+        act = [e for e in events if e["start_s"] <= ts <= e["end_s"]]
+        act.sort(key=lambda e: -e["disp"])
+        return act
 
     tmp = tempfile.mktemp(suffix=".mp4")
     vw = cv2.VideoWriter(tmp, cv2.VideoWriter_fourcc(*"mp4v"), fps, (W, H))
@@ -77,13 +85,13 @@ def main():
         pil = Image.new("RGB", (W, banner_h), C_MOVE if is_move else C_STAT)
         d = ImageDraw.Draw(pil)
         if is_move:
-            limb = s.get("dominant_limb", "")
-            mark = ""
-            if s.get("dominant_limb_source") == "manual":
-                mark = " ✎"          # 人工覆写
-            elif s.get("side_confidence") == "low":
-                mark = "?"           # 深度扭身，左右待核
-            label = f"MOVE #{i}   出{limb}{mark}   {s['start_s']:.1f}-{s['end_s']:.1f}s"
+            act = limbs_at(ts)
+            if act:
+                parts = ["出" + e["limb"] + ("✎" if e["source"] == "manual" else "")
+                         for e in act]
+                label = f"#{i}  {' + '.join(parts)}   {s['start_s']:.1f}-{s['end_s']:.1f}s"
+            else:
+                label = f"#{i}  MOVE   {s['start_s']:.1f}-{s['end_s']:.1f}s"
         else:
             label = f"静止 #{i}   {s['start_s']:.1f}-{s['end_s']:.1f}s"
         d.text((16, banner_h * 0.18), label, font=font, fill=(33, 37, 41))
