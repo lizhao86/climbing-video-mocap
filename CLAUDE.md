@@ -20,6 +20,9 @@
 - 大文件（视频/PDF/report_assets 图）不入 git，见 .gitignore。
 - 验证素材固定用 `IMG_6952_攀岩动作分析/数据/` 下的 CSV。
 - 知识库动作分类沿用教材体系（5 大移动类 + 手顺 4 类），动作中文名用书中译名，记 `book_ref` 页码。
+- **教材 PDF 页码换算：PDF 文件页 = 书本印刷页 + 2**（封面+版权页无编号，2026-07-15 实测校验）。book_ref 记的是印刷页。
+- mediapipe 必须用 **0.10.14**（≥0.10.2x 移除了 `mp.solutions` 旧 API，v1 脚本会挂）。
+- moves.json 改动后跑 `kb_lint.py` 校验 + `kb_render.py` 重新生成 viewer。
 
 ## 目录结构
 
@@ -27,7 +30,7 @@
 climb_pose.py / climb_analyze_report.py   v1 流水线（勿动）
 PLAN.md                                    总计划 + 进度看板
 攀岩技術教本詳細圖解_*.pdf                  知识库素材（東秀磯，161页）
-knowledge_base/                            moves.json + kb_lint.py（S1 产出）
+knowledge_base/                            moves.json + lint/render/extract 脚本 + moves_viewer.html（S1 产出）
 cases/                                     标注案例库（跨视频累积）
 annotations/                               老板导出的标注 JSON 收纳
 IMG_6424_攀岩动作分析/ IMG_6952_攀岩动作分析/  已有两条视频的 v1 分析结果
