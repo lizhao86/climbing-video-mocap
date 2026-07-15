@@ -1,0 +1,2095 @@
+[
+  {
+    "id": "edging",
+    "name_zh": "頂（Edging）",
+    "aliases": [
+      "Edging",
+      "顶",
+      "踩边缘"
+    ],
+    "category": "腳法基礎",
+    "kind": "posture",
+    "book_ref": "2-3-1 p.47",
+    "description": "用攀岩鞋的鞋缘（尤其靠近鞋尖的窄边）卡在细小岩点或岩缘上，靠鞋底硬度支撑体重的踩法，与摩相对，是软硬两种鞋底特性权衡下的踩法之一。",
+    "when_to_use": "适用于小型岩点、岩板、岩阶等狭窄边缘；岩缘愈小，愈需要一开始就精准踩在最佳位置。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "观察脚是否用鞋尖/鞋缘的窄边接触岩点，脚跟略上提，脚背与小腿呈现较陡的角度，常见于极小岩点或岩阶。",
+    "common_errors": [],
+    "confusable_with": [
+      "smearing",
+      "smedging"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "smearing",
+    "name_zh": "摩（Smearing）",
+    "aliases": [
+      "Smearing",
+      "摩",
+      "摩擦踩法"
+    ],
+    "category": "腳法基礎",
+    "kind": "posture",
+    "book_ref": "2-3-2 p.48-49",
+    "description": "把鞋底用力按压在岩壁或岩点上，靠鞋子与岩壁间的最大静摩擦力支撑身体的踩法，与顶相对；书中提到磨砂过的攀岩墙与鞋底最大静摩擦系数约为1.4倍。",
+    "when_to_use": "适用于没有明显岩点、需要靠鞋底摩擦力才能站稳的光滑或缓坡壁面。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "观察脚掌是否大面积平贴在光滑无明显岩点的壁面上，靠鞋底摩擦力支撑，脚踝角度较平、脚跟不特别上提。",
+    "common_errors": [],
+    "confusable_with": [
+      "edging",
+      "smedging"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "smedging",
+    "name_zh": "蹭（Smedging）",
+    "aliases": [
+      "Smedging",
+      "蹭",
+      "顶摩混合"
+    ],
+    "category": "腳法基礎",
+    "kind": "posture",
+    "book_ref": "2-3-3 p.50-51",
+    "description": "结合顶与摩两种要素的踩法，将脚沿壁面边摩擦边旋转，卡在岩点的角落，让重量集中在岩点棱角处以增加支撑力。",
+    "when_to_use": "当脚点相较鞋子显得狭窄但又突出时使用，可取代单纯的顶或单纯的摩。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "观察脚是否贴着壁面边旋转边下滑後卡在岩点棱角上，兼具顶与摩两种特征，常见于狭窄但突出的脚点。",
+    "common_errors": [],
+    "confusable_with": [
+      "edging",
+      "smearing"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "front_edge",
+    "name_zh": "正踩（Front Edge）",
+    "aliases": [
+      "Front Edge",
+      "正踩",
+      "内正踩",
+      "外正踩"
+    ],
+    "category": "腳法基礎",
+    "kind": "posture",
+    "book_ref": "2-4-1 p.52-53",
+    "description": "只用攀岩鞋前端靠近鞋尖的侧边踩极小岩点的踩法，分为以内侧踩的内正踩、以外侧踩的外正踩，注意力应放在鞋缘而非单一脚趾上；脚趾弯曲能缩短出力距离、获得更强支撑力。",
+    "when_to_use": "路线难度愈高、岩点愈小时愈常使用，是踩极小岩点时的首选。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "观察脚是否用靠近鞋尖的侧边(内侧为内正踩、外侧为外正踩)踩在极小岩点上，注意力应在鞋缘而非单一脚趾。",
+    "common_errors": [
+      "把注意力放在每根脚趾而非鞋缘，导致触感不够敏锐"
+    ],
+    "confusable_with": [
+      "inside_edge",
+      "outside_edge"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "inside_edge",
+    "name_zh": "內側踩（Inside Edge）",
+    "aliases": [
+      "Inside Edge",
+      "内侧踩"
+    ],
+    "category": "腳法基礎",
+    "kind": "posture",
+    "book_ref": "2-4-2 p.54-55",
+    "description": "将鞋子内侧的拇指球（拇指根部）重叠在岩点最好施力的位置上踩踏的踩法，是最好使力的踩法之一，拇指球是足部最容易承重的位置。",
+    "when_to_use": "配合往上爬时把脚跟提起、膝盖向下压的动作，让体重确实落在脚上。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "观察脚是否用拇指球(大拇指根部)重叠踩在岩点上，脚跟能自然上提、膝盖向下压。",
+    "common_errors": [
+      "踩点偏向脚跟侧，落在足弓上容易打滑",
+      "用脚尖踩导致脚跟下坠，体重无法确实落在脚上"
+    ],
+    "confusable_with": [
+      "front_edge",
+      "outside_edge"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "outside_edge",
+    "name_zh": "外側踩（Outside Edge）",
+    "aliases": [
+      "Outside Edge",
+      "外侧踩"
+    ],
+    "category": "腳法基礎",
+    "kind": "posture",
+    "book_ref": "2-4-3 p.56",
+    "description": "踩在与拇指球对侧的小指球上的踩法，透过小指侧收缩脚趾获得支撑力；当髋关节柔软度不够、无法用内侧踩贴壁时特别有效，因为外侧踩时腰部更容易贴近墙面。",
+    "when_to_use": "岩点较小、且腳想要使力时使用，常见于调节平衡与小幅度垂膝式。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "观察脚是否用与拇指球对侧的小指球一带踩在岩点上，常见于调节平衡或垂膝式的甩腿脚。",
+    "common_errors": [],
+    "confusable_with": [
+      "inside_edge",
+      "front_edge"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "back_step",
+    "name_zh": "側踩（Back Step）",
+    "aliases": [
+      "Back Step",
+      "侧踩"
+    ],
+    "category": "腳法基礎",
+    "kind": "posture",
+    "book_ref": "2-4-4 p.57",
+    "description": "由作用力与反作用力构成、双脚成对踩在岩点上的踩法，移动时脚会落在背后不易看见的位置，需事先仔细确认脚点。",
+    "when_to_use": "身体需要侧向背对岩壁移动、双脚呈对踩状态时使用。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "观察双脚是否成对踩在岩点上、其中一脚在背后不易看见的位置，身体呈明显侧向背对姿态。",
+    "common_errors": [],
+    "confusable_with": [
+      "outside_edge"
+    ],
+    "min_hold_s": 0.8
+  },
+  {
+    "id": "toe_pocket",
+    "name_zh": "扣（Pocket）",
+    "aliases": [
+      "Pocket",
+      "扣",
+      "指洞踩法"
+    ],
+    "category": "腳法基礎",
+    "kind": "posture",
+    "book_ref": "2-4-5 p.57",
+    "description": "用鞋尖（指尖）勾扣或挤塞进指洞状岩点的踩法；指洞小则用鞋尖直接勾住，指洞较大则须用挤塞方式将鞋子扭进去卡紧，也可直接踩在指洞上方。",
+    "when_to_use": "遇到指洞型态的岩点、且无法直接踩在上面时使用。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "观察脚尖是否伸入指洞状的凹陷岩点中，若指洞较大则脚会以挤塞方式扭入卡紧，或直接踩在指洞上方。",
+    "common_errors": [],
+    "confusable_with": [
+      "front_edge"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "foot_change",
+    "name_zh": "換腳",
+    "aliases": [
+      "Foot Swap",
+      "换脚"
+    ],
+    "category": "腳法基礎",
+    "kind": "action",
+    "book_ref": "2-4-7 p.63",
+    "description": "在同一个脚点位置上，用第二只脚踩上后再把原本的脚抽离的换脚技巧，如同敲敲乐积木一样先补上再抽离；换脚时双手须尽量张开抓在较远的位置以维持平衡。",
+    "when_to_use": "攀岩比想象中更需要频繁换脚，因为能踩的地方通常只有唯一的脚点。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "displacement_magnitude",
+        "range": [
+          0,
+          0.12
+        ],
+        "soft": 0.05,
+        "weight": 0.6,
+        "note": "换脚时脚点位置几乎不变（同一岩点），位移量应接近0，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "hip_height_change_pre_post",
+        "range": [
+          -0.08,
+          0.08
+        ],
+        "soft": 0.05,
+        "weight": 0.4,
+        "note": "换脚过程中髋部高度变化很小，定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "观察同一个脚点位置上是否先后由两脚交替出现(如同敲敲乐积木)，双手在此过程中会张开撑住岩点、重心维持在中间。",
+    "common_errors": [
+      "下面的脚抽离动作太慢，可能连同上面的脚一起踩空跌落"
+    ],
+    "confusable_with": []
+  },
+  {
+    "id": "heel_hook",
+    "name_zh": "掛腳（Heel Hook）",
+    "aliases": [
+      "Heel Hook",
+      "掛脚",
+      "挂脚"
+    ],
+    "category": "吊掛類",
+    "kind": "posture",
+    "book_ref": "2-4-6-(1) p.59-60；3-3 p.88-91",
+    "description": "把攀岩鞋的脚跟掛在岩点上、往下拉将身体往上抬的腳法，相当于第三只手，能运用大腿后侧腿后肌与小腿肚腓肠肌等強壮肌肉，不易疲劳僵硬，也是唯一能从比重心高的位置将身体往上拉的腳法。",
+    "when_to_use": "在前倾壁攀岩时，少了高于重心的拉力身体就会不稳定，此时用掛脚补足；也能有效阻止身体旋转(摆荡)，是攀岩中效率最高的腳法之一。",
+    "detectability": "rule",
+    "pose_rules": [
+      {
+        "feature": "ankle_visibility",
+        "range": [
+          0.5,
+          1.5
+        ],
+        "soft": 0,
+        "weight": 0,
+        "gate": true,
+        "note": "硬性前提：脚踝关键点需可见，布尔编码1=可见，不满足则该片段confidence=null"
+      },
+      {
+        "feature": "ankle_rel_hip_y",
+        "side": "either",
+        "range": [
+          -1.2,
+          0.3
+        ],
+        "soft": 0.1,
+        "weight": 0.4,
+        "note": "约定：(踝y-髋y)/body_scale，图像坐标y向下为正，负值=脚踝高于髋部；掛脚时脚跟通常与髋部齐平或更高，书中未给量化范围，定性推断"
+      },
+      {
+        "feature": "knee_angle",
+        "side": "either",
+        "range": [
+          40,
+          150
+        ],
+        "soft": 10,
+        "weight": 0.3,
+        "note": "膝关节弯曲以将脚跟钩挂上方或侧方岩点，定性推断"
+      },
+      {
+        "feature": "heel_leads_toe_x",
+        "side": "either",
+        "range": [
+          0.15,
+          1.0
+        ],
+        "soft": 0.05,
+        "weight": 0.3,
+        "note": "脚跟领先脚尖方向表示用脚跟钩点而非脚尖，定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "观察是否有一只脚的脚跟(而非脚尖)钩挂在高处或身侧的岩点上，往下拉产生支撑力，常伴随身体后仰或侧倾；注意区分手脚同点时的外掛/内掛。",
+    "common_errors": [],
+    "confusable_with": [
+      "toe_hook",
+      "side_hook_inner",
+      "inverted_hook"
+    ],
+    "min_hold_s": 1.5
+  },
+  {
+    "id": "toe_hook",
+    "name_zh": "勾腳（Toe Hook）",
+    "aliases": [
+      "Toe Hook",
+      "勾脚"
+    ],
+    "category": "吊掛類",
+    "kind": "posture",
+    "book_ref": "2-4-6-(2) p.61",
+    "description": "用脚背（而非脚尖）掛在岩点及岩壁上的腳法，靠整条腿将脚背往上抬的感觉来拉，腿若弯曲会不好使力，因此腿要伸直、甚至上半身也要倒下才有效。",
+    "when_to_use": "常见于水平岩壁或前倾峭壁需要对侧固定身体、防止脚部脱离时使用，双脚同时勾脚又称蝙蝠掛(雙勾腳)。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "foot_pitch",
+        "side": "either",
+        "range": [
+          -60,
+          -5
+        ],
+        "soft": 5,
+        "weight": 0.4,
+        "note": "脚背/脚尖上勾（背屈）钩住岩点或岩缘，负值表示脚尖上翘，定性推断"
+      },
+      {
+        "feature": "ankle_rel_hip_y",
+        "side": "either",
+        "range": [
+          -0.8,
+          0.6
+        ],
+        "soft": 0.1,
+        "weight": 0.3,
+        "note": "位置比掛脚更贴近身体或位于身侧，定性推断"
+      },
+      {
+        "feature": "knee_angle",
+        "side": "either",
+        "range": [
+          100,
+          180
+        ],
+        "soft": 10,
+        "weight": 0.3,
+        "note": "勾脚时腿多为伸直状态，书中提及需伸直甚至上半身倒下才有效，定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "观察是否用脚背(而非脚尖)钩挂在岩点或岩壁边缘，腿多为伸直状态，常见于水平岩壁或前倾峭壁的对侧固定。",
+    "common_errors": [],
+    "confusable_with": [
+      "heel_hook",
+      "inverted_hook"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "side_hook_inner",
+    "name_zh": "側掛－內側掛",
+    "aliases": [
+      "Inside Hook",
+      "内侧掛"
+    ],
+    "category": "吊掛類",
+    "kind": "posture",
+    "book_ref": "2-4-6-(3)① p.61",
+    "description": "掛住攀岩鞋内侧来拉的腳法，适用于角落或直条状岩点，大多用来取得身体平衡而非拉近距离；这个腳法光靠掛住的那只脚是不够的，另一只脚必须靠掛住的脚近一点身体才会稳定。",
+    "when_to_use": "在角落或直条状岩点旁需要取得身体平衡时使用。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "观察是否用脚内侧轻轻抵住角落或直条状岩点以取得身体平衡，另一脚需靠近掛住的脚，多用于取得平衡而非拉近距离。",
+    "common_errors": [],
+    "confusable_with": [
+      "side_hook_outer",
+      "heel_hook"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "side_hook_outer",
+    "name_zh": "側掛－外側掛",
+    "aliases": [
+      "Outside Hook",
+      "外侧掛"
+    ],
+    "category": "吊掛類",
+    "kind": "posture",
+    "book_ref": "2-4-6-(3)② p.61",
+    "description": "对斜峭壁上的架状岩点很有效的掛勾腳法，可藉由身体侧面的扭转来撑住躯干，比掛脚更能有效对抗前倾峭壁（掛脚时腰会因下肢结构往下掉）。",
+    "when_to_use": "遇到斜峭壁上的架状岩点、需要更强支撑力对抗前倾峭壁时使用。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "观察是否用脚外侧掛在斜峭壁的架状岩点上，透过身体侧面扭转来撑住躯干，常用于对抗前倾峭壁。",
+    "common_errors": [],
+    "confusable_with": [
+      "side_hook_inner"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "inverted_hook",
+    "name_zh": "倒掛型掛勾",
+    "aliases": [
+      "Inverted Hook",
+      "倒掛型掛勾"
+    ],
+    "category": "吊掛類",
+    "kind": "posture",
+    "book_ref": "2-4-6-(4) p.62",
+    "description": "在前倾峭壁及水平岩壁上、利用双脚夹住或朝反方向推的腳法总称，包含四种变体：①用脚尖夹（可夹同一岩点或不同岩点）、②上方脚用脚跟、下方脚用脚背夹住较大岩点、③单脚用脚背、另一脚用鞋底透过作用力与反作用力固定（适用位置不同的岩点）、④脚跟与脚尖塞入两岩点间空隙支撑；此腳法会把脚卡住，一旦挥落容易从上半身先落地，须留意安全鬆开。",
+    "when_to_use": "前倾峭壁及水平岩壁上岩点具挑战性、需要双脚夹住或反向推撑固定身体时使用。",
+    "detectability": "manual",
+    "pose_rules": [],
+    "visual_cues_for_claude": "观察双脚是否在前倾峭壁或水平岩壁上以脚尖夹、脚背与脚跟、脚背与鞋底、或脚跟与脚尖等组合夹住/卡住岩点，是较罕见的倒掛型腳法组合，需近距离画面才能分辨具体变体，建议以人工标注为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "heel_hook",
+      "toe_hook"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "hand_jam",
+    "name_zh": "手掌（Hand Jam）",
+    "aliases": [
+      "Hand Jam",
+      "手掌塞"
+    ],
+    "category": "手塞",
+    "kind": "posture",
+    "book_ref": "2-6-1 p.64",
+    "description": "将拇指根部胖胖的部位（拇指丘）按压在裂隙一侧、手背抵住另一侧壁面以获得左右反作用力的塞手法，是裂隙攀岩最常见宽度的塞法；手太小也可将拇指朝手掌侧弯曲使拇指丘变大。",
+    "when_to_use": "用于比手掌厚度稍宽的规则裂隙，双手交替填塞左右前进；有时上方的手也可将小指侧朝上（反手）来前进。",
+    "detectability": "manual",
+    "pose_rules": [],
+    "visual_cues_for_claude": "手臂没入裂隙中消失，仅露出手腕以上，身体贴近岩缝，双手交替使用；单目摄像头无法看清裂隙内手掌形状，须以人工标注为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "fist_jam",
+      "thin_hand_jam"
+    ],
+    "min_hold_s": 2.0
+  },
+  {
+    "id": "finger_jam",
+    "name_zh": "手指（Finger Jam）",
+    "aliases": [
+      "Finger Jam",
+      "手指塞",
+      "Pinkie Jam"
+    ],
+    "category": "手塞",
+    "kind": "posture",
+    "book_ref": "2-6-2 p.65",
+    "description": "手指插入最狭窄裂隙并扭转卡紧的塞法；最窄可用小指塞（Pinkie Jam，把小指第二关节卡进裂隙），将手指深入直到指根则称手指塞，以反手为主，裂隙宽窄不一时以指关节是否碰得到底决定塞法。",
+    "when_to_use": "用于最狭窄、只能放入手指的裂隙。",
+    "detectability": "manual",
+    "pose_rules": [],
+    "visual_cues_for_claude": "只有手指没入裂隙，手掌在外，动作幅度很小，难以从远处影像判断具体塞法，须以人工标注为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "ring_lock"
+    ],
+    "min_hold_s": 2.0
+  },
+  {
+    "id": "thin_hand_jam",
+    "name_zh": "薄手（Thin Hand）",
+    "aliases": [
+      "Thin Hand",
+      "薄手塞"
+    ],
+    "category": "手塞",
+    "kind": "posture",
+    "book_ref": "2-6-3 p.65",
+    "description": "裂隙宽度不大不小、手指放得下但手掌进不去时使用的塞法，靠弯曲手指或旋转手掌获得支撑力，拇指腹是获得反作用力的关键；理想状态下推进力由塞脚负责，手只负责别让身体脱离岩壁。",
+    "when_to_use": "攀登时上侧的手要反手、拇指朝下，下侧的手要正手、拇指朝上，双手以不交叉的方式前进。",
+    "detectability": "manual",
+    "pose_rules": [],
+    "visual_cues_for_claude": "手部同样没入裂隙至手腕附近，姿势介于手指塞与手掌塞之间，视觉上难以精确区分，须以人工标注为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "hand_jam",
+      "ring_lock"
+    ],
+    "min_hold_s": 2.0
+  },
+  {
+    "id": "ring_lock",
+    "name_zh": "環扣（Ring Lock）",
+    "aliases": [
+      "Ring Lock",
+      "环扣"
+    ],
+    "category": "手塞",
+    "kind": "posture",
+    "book_ref": "2-6-4 p.65",
+    "description": "薄手偏宽的裂隙宽度可用的塞法，将食指与中指指腹压在拇指指甲上，每根手指只放到第二关节左右，让手指像岩塞一样边扭转边前进；左右轮流或交叉都有效，也可用来掛在裂隙边缘上。",
+    "when_to_use": "裂隙宽度介于薄手偏宽的范围时使用，以当下最顺手的方式攀爬即可。",
+    "detectability": "manual",
+    "pose_rules": [],
+    "visual_cues_for_claude": "手指整体形成环状插入裂隙，外观特征细微，需近距离特写才可能辨识，须以人工标注为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "finger_jam",
+      "thin_hand_jam"
+    ],
+    "min_hold_s": 2.0
+  },
+  {
+    "id": "fist_jam",
+    "name_zh": "拳頭（Fist Jam）",
+    "aliases": [
+      "Fist Jam",
+      "拳头塞"
+    ],
+    "category": "手塞",
+    "kind": "posture",
+    "book_ref": "2-6-5 p.66",
+    "description": "把手握成拳头放入裂隙里卡住的塞法，也可先松握放入再用力握紧，原则上一定要卡住裂隙中最窄的部份；理论上拇指要握在掌心里，但拳头过小时也可将拇指伸出调整宽度。",
+    "when_to_use": "用拳头攀爬时，上面的手可以和下面的手一样正手、手背朝上；若下面的手改成反手、手指朝正，撑的时间会更长。",
+    "detectability": "manual",
+    "pose_rules": [],
+    "visual_cues_for_claude": "手部呈拳头状没入裂隙，仅露出手腕以上，双手可正手或反手组合使用，须以人工标注为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "hand_jam",
+      "stacking"
+    ],
+    "min_hold_s": 2.0
+  },
+  {
+    "id": "stacking",
+    "name_zh": "堆疊（Leavittation）",
+    "aliases": [
+      "Leavittation",
+      "堆叠塞"
+    ],
+    "category": "手塞",
+    "kind": "posture",
+    "book_ref": "2-6-6 p.66",
+    "description": "当裂隙大小超过拳头、只靠单手会松掉时，把双手叠合起来的塞法，可手掌叠手掌、手掌叠拳头、拳头叠拳头；名字取自加州攀岩者Randy Leavitt。",
+    "when_to_use": "裂隙宽度超过单手拳头能塞入的范围时，用来固定在一点、将身体往上拉。",
+    "detectability": "manual",
+    "pose_rules": [],
+    "visual_cues_for_claude": "两只手明显叠放在同一裂隙位置，因无法交替前进，移动主要靠脚，双手长时间停留同一高度，须以人工标注为主。",
+    "common_errors": [
+      "双手叠合固定同一点后无法轮流交替前进，需靠脚法移动身体"
+    ],
+    "confusable_with": [
+      "fist_jam",
+      "arm_lock"
+    ],
+    "min_hold_s": 2.0
+  },
+  {
+    "id": "arm_lock",
+    "name_zh": "單臂鎖定（Arm Lock）",
+    "aliases": [
+      "Arm Lock",
+      "单臂锁定",
+      "Chicken Wing",
+      "Arm Bar"
+    ],
+    "category": "手塞",
+    "kind": "posture",
+    "book_ref": "2-6-7 p.66",
+    "description": "裂隙不足以让半身塞入时，将手肘弯曲、透过后方肩膀与前方手掌制造反作用力卡住手臂的塞法，姿势像鸡翅因此别名Chicken Wing；另一手反手按住裂隙边缘稳定或用推法把身体往上挪。比这稍窄的裂隙可用单臂伸直（Arm Bar）。",
+    "when_to_use": "裂隙比堆疊窄、无法塞入整只手掌或拳头组合时使用，前进须依靠腿的屈伸。",
+    "detectability": "manual",
+    "pose_rules": [],
+    "visual_cues_for_claude": "单侧手臂弯曲成鸡翅状卡在裂隙内，肩膀贴近岩壁，是较易从画面辨识的姿态，但精确类型仍建议以视觉/人工确认为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "stacking"
+    ],
+    "min_hold_s": 1.5
+  },
+  {
+    "id": "foot_jam",
+    "name_zh": "腳塞",
+    "aliases": [
+      "Foot Jam",
+      "脚塞"
+    ],
+    "category": "腳塞",
+    "kind": "posture",
+    "book_ref": "2-7-1 p.67",
+    "description": "将小脚趾那侧向下放入裂隙、接着朝内侧旋转把脚卡死以获得支撑力的基本腳塞法；裂隙过窄攀岩鞋塞不下时，可在裂隙周围寻找能顶或摩的脚点，若裂隙很宽（可爬烟囱的程度）则改用鞋跟与鞋尖横放卡住攀爬。",
+    "when_to_use": "攀爬裂隙时腳的推力比手强，是裂隙攀岩的基础技巧；腳塞是把脚硬挤进岩缝，脚会痛，穿大一号的鞋子会轻松一点。",
+    "detectability": "manual",
+    "pose_rules": [],
+    "visual_cues_for_claude": "脚整只没入裂隙并旋转卡住，从外部只能看到小腿以上，具体卡入角度不可见，须以人工标注为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "t_stack"
+    ],
+    "min_hold_s": 2.0
+  },
+  {
+    "id": "t_stack",
+    "name_zh": "T字腳（T Stack）",
+    "aliases": [
+      "T Stack",
+      "T字脚"
+    ],
+    "category": "腳塞",
+    "kind": "posture",
+    "book_ref": "2-7-2 p.67",
+    "description": "当脚横放入裂隙也无法固定时，用T字腳的塞法：把腳摆成T字形，一只脚摆直、另一只脚摆横，前后抵住裂隙；这种塞法无法让脚交互向上，须趁手撑住的瞬间将脚往上缩。",
+    "when_to_use": "裂隙宽度使单脚横放仍不稳定时使用。",
+    "detectability": "manual",
+    "pose_rules": [],
+    "visual_cues_for_claude": "双脚呈丁字交叠状卡在裂隙中，具体卡入结构在裂隙内部不可见，须以人工标注为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "foot_jam",
+      "back_and_foot"
+    ],
+    "min_hold_s": 1.5
+  },
+  {
+    "id": "back_and_foot",
+    "name_zh": "背與腳（Back & Foot）",
+    "aliases": [
+      "Back & Foot",
+      "背与脚",
+      "烟囱式",
+      "Chimney"
+    ],
+    "category": "腳塞",
+    "kind": "posture",
+    "book_ref": "2-7-3 p.67",
+    "description": "当裂隙大到身体能轻松进入（烟囱地形）时使用的腳法，全身进入裂隙内，利用身体各部位（背部与双脚）前后抵住两侧岩壁；手撑在这种大小的裂隙上虽不太消耗体力，却也无法采取防护措施。",
+    "when_to_use": "用于宽度足以让身体进入的烟囱型地形。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "整个身体撑在两片相对岩壁之间，背部与双脚分别抵住不同侧岩壁，躯干在外部清晰可见，是腳塞类技巧中少数能从外部摄影机判断整体姿态的技巧。",
+    "common_errors": [],
+    "confusable_with": [
+      "t_stack",
+      "stemming"
+    ],
+    "min_hold_s": 2.0
+  },
+  {
+    "id": "inner_diagonal",
+    "name_zh": "內對角",
+    "aliases": [
+      "Inner Diagonal",
+      "内对角"
+    ],
+    "category": "調節平衡類",
+    "kind": "posture",
+    "book_ref": "3-2-4 p.76",
+    "description": "调节平衡中使用率最高的基础手法：支撑手与踩稳脚呈对角分布（脚点靠近支撑手正下方一侧），透过对角支撑达到左右平衡，另一脚以掛旗法甩腿维持稳定。",
+    "when_to_use": "当脚点位于支撑手与下一岩点之间、距离较近时使用；从斜岩板到垂直壁、前倾峭壁皆适用，垂直壁上约有50%机率使用这项技巧。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "ankle_cross_midline",
+        "side": "either",
+        "range": [
+          -0.3,
+          0.3
+        ],
+        "soft": 0.1,
+        "weight": 0.3,
+        "note": "内对角脚点离支撑手较近，脚踝相对身体中线偏移较小，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "torso_lean",
+        "range": [
+          -15,
+          15
+        ],
+        "soft": 5,
+        "weight": 0.3,
+        "note": "内对角时身体较贴墙，偏转角小，定性推断"
+      },
+      {
+        "feature": "hip_angle",
+        "range": [
+          140,
+          180
+        ],
+        "soft": 10,
+        "weight": 0.4,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "支撑手与踩稳的脚呈对角分布，另一脚以掛旗法甩出维持平衡，身体大致正对岩壁，需要区分内对角（脚点近）与外对角（脚点远）。",
+    "common_errors": [],
+    "confusable_with": [
+      "outer_diagonal",
+      "inner_flag"
+    ],
+    "min_hold_s": 0.8
+  },
+  {
+    "id": "outer_diagonal",
+    "name_zh": "外對角",
+    "aliases": [
+      "Outer Diagonal",
+      "外对角"
+    ],
+    "category": "調節平衡類",
+    "kind": "posture",
+    "book_ref": "3-2-5 p.78",
+    "description": "与内对角方向相反的对角支撑手法，脚点位于支撑手与下一岩点的反方向、距离较远时使用；在调节平衡中是最优秀的掛旗式脚法之一，攀爬前倾峭壁必用。",
+    "when_to_use": "脚点比支撑点离下一个岩点更远时使用，从垂直壁到斜峭壁都能应用。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "ankle_cross_midline",
+        "side": "either",
+        "range": [
+          0.3,
+          1.2
+        ],
+        "soft": 0.1,
+        "weight": 0.4,
+        "note": "外对角脚点离支撑手较远，脚踝偏移量较大，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "torso_lean",
+        "range": [
+          15,
+          45
+        ],
+        "soft": 5,
+        "weight": 0.3,
+        "note": "外对角常伴随身体较大幅度侧倾，定性推断"
+      },
+      {
+        "feature": "hip_angle",
+        "range": [
+          140,
+          190
+        ],
+        "soft": 10,
+        "weight": 0.3,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "支撑手与踩稳脚呈对角，身体略向内缩，另一脚往反方向大幅甩腿掛旗。",
+    "common_errors": [],
+    "confusable_with": [
+      "inner_diagonal",
+      "outer_flag"
+    ],
+    "min_hold_s": 0.8
+  },
+  {
+    "id": "inner_flag",
+    "name_zh": "內側掛旗法",
+    "aliases": [
+      "Inside Flag",
+      "内侧掛旗法"
+    ],
+    "category": "調節平衡類",
+    "kind": "posture",
+    "book_ref": "3-2-7 p.80-81",
+    "description": "支撑手与脚点平行支撑在同一侧时，将另一腳甩入身体与岩壁之间（绕过身前呈交叉状）以取得调节平衡，不必换脚就能让身体很稳定。",
+    "when_to_use": "当脚点位于支撑手与下一岩点的反方向、且手脚在同一侧（平行支撑）时使用，可避免频繁换脚；对愈小的脚点愈有效。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "ankle_cross_midline",
+        "side": "either",
+        "range": [
+          -1.2,
+          -0.2
+        ],
+        "soft": 0.1,
+        "weight": 0.4,
+        "note": "内侧掛旗脚绕至身体内侧越过中线，定性推断；正负号约定：正值＝脚踝在支撑脚外侧，负值＝越过中线至内侧"
+      },
+      {
+        "feature": "feet_spread",
+        "range": [
+          0.6,
+          1.5
+        ],
+        "soft": 0.1,
+        "weight": 0.3,
+        "note": "甩腿掛旗时双脚间距明显增大，定性推断"
+      },
+      {
+        "feature": "hip_angle",
+        "range": [
+          150,
+          200
+        ],
+        "soft": 10,
+        "weight": 0.3,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "甩出的那条腿绕过身体前方与踩稳脚呈交叉状，腰部旋转配合甩腿动作，从肩膀往上抬而非用手硬拉。",
+    "common_errors": [],
+    "confusable_with": [
+      "outer_flag",
+      "inner_diagonal"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "outer_flag",
+    "name_zh": "外側掛旗法",
+    "aliases": [
+      "Outside Flag",
+      "外侧掛旗法"
+    ],
+    "category": "調節平衡類",
+    "kind": "posture",
+    "book_ref": "3-2-8 p.82-84",
+    "description": "与内侧掛旗法方向相反，将甩出的腿绕过踩稳脚外侧形成交叉，同样不必换脚即可取得平衡；短距离移动时只需简单微调甩腿即可应对，深度甩腿时还可作为休息姿势、双手轮流放松。",
+    "when_to_use": "当脚点位于支撑手与下一岩点的反方向、且手脚在同一侧（平行支撑）时使用；也可在深度掛旗状态下把腰大幅沉下来休息。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "ankle_cross_midline",
+        "side": "either",
+        "range": [
+          0.2,
+          1.2
+        ],
+        "soft": 0.1,
+        "weight": 0.4,
+        "note": "外侧掛旗脚甩至支撑脚外侧、未过中线，定性推断"
+      },
+      {
+        "feature": "feet_spread",
+        "range": [
+          0.5,
+          1.5
+        ],
+        "soft": 0.1,
+        "weight": 0.3,
+        "note": "定性推断"
+      },
+      {
+        "feature": "hip_angle",
+        "range": [
+          140,
+          190
+        ],
+        "soft": 10,
+        "weight": 0.3,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "甩出的那条腿绕到踩稳脚外侧形成交叉，腰部可大幅下沉，是常见的攀岩中场休息姿势之一，手打直放松、交替抓取两个岩点。",
+    "common_errors": [],
+    "confusable_with": [
+      "inner_flag",
+      "outer_diagonal",
+      "swing_by"
+    ],
+    "min_hold_s": 2.0
+  },
+  {
+    "id": "bow_balance",
+    "name_zh": "弓身平衡",
+    "aliases": [
+      "Bow Balance",
+      "弓身平衡"
+    ],
+    "category": "調節平衡類",
+    "kind": "posture",
+    "book_ref": "3-2-9 p.85",
+    "description": "身体像弓一样后仰、透过全身重量分配取得平衡的手法，用于处理近距离岩点的调节平衡，记得以平衡分配为优先，支撑手不需用力抓握。",
+    "when_to_use": "在坡度不大、接近垂直壁的前倾壁上，若下一岩点就在附近、不需甩腿配重也能使用；壁面或岩石上有障碍物无法透过甩腿维持平衡时也很有效。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "torso_lean",
+        "range": [
+          20,
+          60
+        ],
+        "soft": 10,
+        "weight": 0.5,
+        "note": "弓身平衡时上半身后仰幅度较大，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "hip_angle",
+        "range": [
+          160,
+          200
+        ],
+        "soft": 10,
+        "weight": 0.3,
+        "note": "定性推断"
+      },
+      {
+        "feature": "feet_spread",
+        "range": [
+          0,
+          0.4
+        ],
+        "soft": 0.1,
+        "weight": 0.2,
+        "note": "双脚并拢站立配重，定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "上半身明显向后仰呈弓形，双脚并拢站立配重，眼睛只需瞄准目标而非死盯，头部肌肉不紧绷。",
+    "common_errors": [],
+    "confusable_with": [
+      "inner_diagonal"
+    ],
+    "min_hold_s": 0.8
+  },
+  {
+    "id": "high_step",
+    "name_zh": "高跨步",
+    "aliases": [
+      "High Step",
+      "高跨步",
+      "青蛙步",
+      "Frog Step"
+    ],
+    "category": "推拉類",
+    "kind": "posture",
+    "book_ref": "3-4-1 p.93-95",
+    "description": "将脚抬高至腰部以上的高处脚点、把身体重心迅速转移到该脚上再伸手抓取下一岩点的推拉类腳法，本质是支点下一点配重型的平衡姿势；双脚内侧踩、身体正对岩壁往上爬又称青蛙步。",
+    "when_to_use": "当脚点位于支撑手与下一岩点间的高处、且手无法直接抓到下一岩点时使用。",
+    "detectability": "rule",
+    "pose_rules": [
+      {
+        "feature": "knee_visibility",
+        "range": [
+          0.5,
+          1.5
+        ],
+        "soft": 0,
+        "weight": 0,
+        "gate": true,
+        "note": "硬性前提：膝盖关键点需可见，布尔编码1=可见"
+      },
+      {
+        "feature": "knee_rel_hip_y",
+        "side": "either",
+        "range": [
+          -1.0,
+          -0.2
+        ],
+        "soft": 0.1,
+        "weight": 0.5,
+        "note": "约定：(膝y-髋y)/body_scale，负值＝膝盖高于髋部；高跨步时膝盖明显高于髋部，书中无量化角度仅描述'脚点在支撑手与下一岩点间的高处'，定性推断"
+      },
+      {
+        "feature": "knee_angle",
+        "side": "either",
+        "range": [
+          30,
+          110
+        ],
+        "soft": 10,
+        "weight": 0.3,
+        "note": "定性推断"
+      },
+      {
+        "feature": "hip_angle",
+        "range": [
+          60,
+          140
+        ],
+        "soft": 10,
+        "weight": 0.2,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "一脚明显抬高过腰甚至过肩，膝盖朝下、臀部坐向脚跟，腰部贴壁，重心完全落在这只高脚上后才伸出另一手。",
+    "common_errors": [
+      "体重尚未完全移到支撑脚上就贸然伸手，会加重支撑手负担"
+    ],
+    "confusable_with": [
+      "mantling",
+      "drop_knee"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "mantling",
+    "name_zh": "下壓（Mantling）",
+    "aliases": [
+      "Mantling",
+      "下压",
+      "撑上"
+    ],
+    "category": "推拉類",
+    "kind": "action",
+    "book_ref": "3-4-4 p.96-99",
+    "description": "从坡度陡峭处爬到平缓或顶端时使用的推拉类腳法，先用双手向上拉将身体拉高到胸口，再一鼓作气转换为向下推撑将身体继续推高，最后把脚掛上岩缘往上爬；动作中段（拉转推的转换）最不易掌握，须靠动作的惯性来克服。",
+    "when_to_use": "适用于在巨石顶端附近攀爬，或岩壁像架子一样坡度平缓、前方没有明显岩点必须整个身体往上爬时。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "hip_height_change_pre_post",
+        "range": [
+          0.3,
+          2.0
+        ],
+        "soft": 0.1,
+        "weight": 0.5,
+        "note": "下壓过程身体整体高度显著上升，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "elbow_angle",
+        "side": "either",
+        "range": [
+          140,
+          180
+        ],
+        "soft": 10,
+        "weight": 0.3,
+        "note": "动作末段手肘打直锁定以撑住身体，定性推断"
+      },
+      {
+        "feature": "segment_duration_s",
+        "range": [
+          0.5,
+          4.0
+        ],
+        "soft": 0.5,
+        "weight": 0.2,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "先双手拉身体贴近岩缘，随后单手或双手转换成手掌撑地/撑岩的推姿势将身体撑起，最后把脚提上岩架站起，动作中段有明显的拉转推过渡。",
+    "common_errors": [
+      "身体尚未完全抬高就急着上脚，可能失衡下坠"
+    ],
+    "confusable_with": [
+      "high_step",
+      "upper_push"
+    ]
+  },
+  {
+    "id": "drop_knee",
+    "name_zh": "垂膝式（Drop Knee）",
+    "aliases": [
+      "Drop Knee",
+      "垂膝式",
+      "垂膝掛旗法"
+    ],
+    "category": "反作用力類",
+    "kind": "posture",
+    "book_ref": "3-5-1 p.102-105",
+    "description": "反作用力类腳法代表，双脚一前一后蹬住岩点，后腿膝盖向下内转产生反作用力，配合腰部旋转将上半身向抓取手方向抬高；也可搭配掛旗形成垂膝掛旗法，腳尖将岩点往下拉的动作使身体向上。",
+    "when_to_use": "从垂直岩壁到水平岩壁皆适用，只要岩点大致平行排列、双脚能一前一后踩住即可使用；蹬腳内侧负担太大时韧带有可能受伤须小心。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "knee_angle",
+        "side": "either",
+        "range": [
+          30,
+          100
+        ],
+        "soft": 10,
+        "weight": 0.4,
+        "note": "垂膝式后腿膝盖深度弯曲内转，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "hip_wall_proxy",
+        "range": [
+          0.5,
+          1.0
+        ],
+        "soft": 0.1,
+        "weight": 0.3,
+        "note": "髋部贴近岩壁，代理值越高表示越贴墙，定性推断"
+      },
+      {
+        "feature": "torso_lean",
+        "range": [
+          -10,
+          20
+        ],
+        "soft": 5,
+        "weight": 0.3,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "后腿膝盖明显向内下方旋转、几乎指向地面，髋部贴近岩壁旋转，上半身随之朝抓取手方向抬升。",
+    "common_errors": [
+      "蹬脚内侧负担过大可能造成韧带受伤，需小心力道"
+    ],
+    "confusable_with": [
+      "stemming",
+      "knee_bar",
+      "high_step"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "stemming",
+    "name_zh": "外撐（Stemming）",
+    "aliases": [
+      "Stemming",
+      "外撑"
+    ],
+    "category": "反作用力類",
+    "kind": "posture",
+    "book_ref": "3-5-2 p.106-107",
+    "description": "把脚抵在墙上或相对的岩壁/岩点两侧、靠反作用力使身体稳定的支撑腳法，适用于角落或宽阔的凹角地形，若没有岩点也可用摩（以鞋底压岩壁）来保持稳定。",
+    "when_to_use": "主要用于凹陷的壁面与地形，若大型人工岩点位置等高、能让双脚张开抵住时也可使用。",
+    "detectability": "rule",
+    "pose_rules": [
+      {
+        "feature": "ankle_visibility",
+        "range": [
+          0.5,
+          1.5
+        ],
+        "soft": 0,
+        "weight": 0,
+        "gate": true,
+        "note": "硬性前提：双脚脚踝需可见，布尔编码1=可见"
+      },
+      {
+        "feature": "feet_spread",
+        "range": [
+          0.9,
+          2.0
+        ],
+        "soft": 0.1,
+        "weight": 0.6,
+        "note": "外撑双脚需大幅张开抵住相对岩壁/岩点，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "hip_angle",
+        "range": [
+          150,
+          200
+        ],
+        "soft": 10,
+        "weight": 0.4,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "双脚大幅张开分别抵住两侧岩壁或岩点，身体重心在两脚之间偏前或偏后依地形而定，双手负担明显减轻甚至可放开。",
+    "common_errors": [],
+    "confusable_with": [
+      "drop_knee",
+      "side_push",
+      "back_and_foot"
+    ],
+    "min_hold_s": 1.5
+  },
+  {
+    "id": "layback",
+    "name_zh": "側身（Lay Back）",
+    "aliases": [
+      "Lay Back",
+      "侧身"
+    ],
+    "category": "反作用力類",
+    "kind": "posture",
+    "book_ref": "3-5-3 p.108-109",
+    "description": "手拉、脚蹬纵长形岩点，左右手脚轮流交替攀爬的技巧，适合垂直排列的岩点、角落边缘、裂隙或直向断层；姿势容易歪掉，须小心维持平衡，手脚伸直能降低横向摆荡速度、更容易控制姿势。",
+    "when_to_use": "当岩点直向排列在垂直或坡度平缓的前倾壁上，且大小能用脚抵住并用手拉住时使用。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "torso_lean",
+        "range": [
+          20,
+          60
+        ],
+        "soft": 10,
+        "weight": 0.4,
+        "note": "侧身时身体侧倾角度明显，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "shoulder_width_ratio",
+        "range": [
+          0.5,
+          0.9
+        ],
+        "soft": 0.05,
+        "weight": 0.3,
+        "note": "身体侧对岩壁，肩宽在画面中的投影比例变小，定性推断"
+      },
+      {
+        "feature": "feet_spread",
+        "range": [
+          0.1,
+          0.6
+        ],
+        "soft": 0.1,
+        "weight": 0.3,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "身体侧面靠近岩壁，一手拇指朝下一手拇指朝上交叉抓握纵长岩点，双脚同时抵在岩点或壁面上蹬撑，身体呈侧倾姿态。",
+    "common_errors": [
+      "长时间用手硬拉、脚硬蹬会加速疲劳，应兼顾平衡与速度"
+    ],
+    "confusable_with": [
+      "side_push",
+      "crossover"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "knee_bar",
+    "name_zh": "鎖膝法（Knee Bar）",
+    "aliases": [
+      "Knee Bar",
+      "锁膝法"
+    ],
+    "category": "反作用力類",
+    "kind": "posture",
+    "book_ref": "3-5-4 p.110",
+    "description": "一脚踩在岩点上、其上方有更大或朝下凹的岩点刚好位于膝部位置时，用膝盖顶端顶住上方岩点、脚踝下压获得反作用力固定身体的腳法，锁定良好时甚至能放开双手休息，调整脚踝弯曲角度可改变施加的力量。",
+    "when_to_use": "现场能施展锁膝法的位置机会不多，但一旦有可以让手放松休息。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "knee_angle",
+        "side": "either",
+        "range": [
+          20,
+          80
+        ],
+        "soft": 10,
+        "weight": 0.5,
+        "note": "锁膝法膝盖深度弯曲卡入上方岩点下方，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "hands_gap",
+        "range": [
+          0.3,
+          2.0
+        ],
+        "soft": 0.1,
+        "weight": 0.2,
+        "note": "锁定良好时可放开双手休息，双手间距不受限，定性推断"
+      },
+      {
+        "feature": "hip_angle",
+        "range": [
+          60,
+          140
+        ],
+        "soft": 10,
+        "weight": 0.3,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "单腿膝盖深度弯曲、卡入上方岩点与下方脚点之间形成夹角，双手可能完全放开或轻放，常作为休息姿势。",
+    "common_errors": [
+      "蹬脚内侧负担过大可能造成韧带受伤，需小心力道"
+    ],
+    "confusable_with": [
+      "drop_knee"
+    ],
+    "min_hold_s": 3.0
+  },
+  {
+    "id": "side_push",
+    "name_zh": "側推（Side Push）",
+    "aliases": [
+      "Side Push",
+      "侧推"
+    ],
+    "category": "反作用力類",
+    "kind": "posture",
+    "book_ref": "3-5-5 p.110",
+    "description": "脚点直向排列、侧边有岩点可用全身抵住时的推撑腳法，透过手脚在对角上抵住获得最长的支撑距离，基本上手肘须打直，再透过膝部角度调整抵住岩点的力量。",
+    "when_to_use": "腳点直向而侧边有岩点、可用全身力量抵住时使用。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "feet_spread",
+        "range": [
+          0.8,
+          2.0
+        ],
+        "soft": 0.1,
+        "weight": 0.4,
+        "note": "侧推双脚或手脚呈对角大幅撑开，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "hands_gap",
+        "range": [
+          0.5,
+          1.5
+        ],
+        "soft": 0.1,
+        "weight": 0.3,
+        "note": "定性推断"
+      },
+      {
+        "feature": "elbow_angle",
+        "side": "either",
+        "range": [
+          150,
+          180
+        ],
+        "soft": 10,
+        "weight": 0.3,
+        "note": "手臂需打直才能有效抵撑，定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "手脚呈对角方向大幅撑开推住岩点，手肘打直，腹肌背肌等核心明显收紧以稳定身体。",
+    "common_errors": [],
+    "confusable_with": [
+      "stemming",
+      "upper_push"
+    ],
+    "min_hold_s": 1.0
+  },
+  {
+    "id": "upper_push",
+    "name_zh": "上推（Upper Push）",
+    "aliases": [
+      "Upper Push",
+      "上推"
+    ],
+    "category": "反作用力類",
+    "kind": "posture",
+    "book_ref": "3-5-6 p.111",
+    "description": "肩膀上方有较大岩点或朝下的高低差时，用手背抵住肩膀正上方位置向上推撑身体前进的推拉类手法，手臂打直后能不使用指力抓握而让手休息。",
+    "when_to_use": "一般用于朝下的高低差，也适用朝旁边的高低差；理论上同侧手脚较容易施力，但对角推也可以。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "wrist_rel_shoulder_y",
+        "side": "either",
+        "range": [
+          -0.3,
+          0.3
+        ],
+        "soft": 0.1,
+        "weight": 0.4,
+        "note": "上推手掌高度约在肩膀附近，非高举过头，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "elbow_angle",
+        "side": "either",
+        "range": [
+          150,
+          180
+        ],
+        "soft": 10,
+        "weight": 0.3,
+        "note": "推到顶点时手肘打直，定性推断"
+      },
+      {
+        "feature": "feet_spread",
+        "range": [
+          0.3,
+          1.0
+        ],
+        "soft": 0.1,
+        "weight": 0.3,
+        "note": "双脚打开形成三点支撑，定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "手背靠在肩膀正上方向上顶推，手臂逐渐打直，双脚打开形成三点支撑。",
+    "common_errors": [],
+    "confusable_with": [
+      "mantling",
+      "side_push"
+    ],
+    "min_hold_s": 0.8
+  },
+  {
+    "id": "deadpoint",
+    "name_zh": "靜止點（Deadpoint）",
+    "aliases": [
+      "Deadpoint",
+      "静止点"
+    ],
+    "category": "動態移動類",
+    "kind": "action",
+    "book_ref": "3-6-1 p.117",
+    "description": "双手将身体快速拉向壁面、在跳起高度停止的瞬间（体重负荷瞬间减轻、近乎无重力）抓取下一岩点的动态腳法；不能只靠双手拉，还要有意识地运用上半身的摆荡。",
+    "when_to_use": "当双手支撑的岩点小或不易支撑、难以放开单手去抓下一岩点时使用。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "peak_com_speed",
+        "range": [
+          0.8,
+          3.0
+        ],
+        "soft": 0.2,
+        "weight": 0.4,
+        "note": "跳至最高点瞬间接近静止前需先有加速过程，单位为body_scale/s，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "segment_duration_s",
+        "range": [
+          0.2,
+          1.2
+        ],
+        "soft": 0.2,
+        "weight": 0.3,
+        "note": "定性推断"
+      },
+      {
+        "feature": "both_hands_release_simultaneously",
+        "range": [
+          0,
+          0.5
+        ],
+        "soft": 0.1,
+        "weight": 0.3,
+        "note": "布尔特征编码：0=false,1=true；静止点通常仍有一手在支撑，双手同时脱离机率低"
+      }
+    ],
+    "visual_cues_for_claude": "身体先加速贴向岩壁再于最高点短暂停顿，随即单手伸出抓点，动作节奏感强，落点后有明显缓冲。",
+    "common_errors": [
+      "伸手时机太早导致距离不够，太晚则抓点瞬间负担过大"
+    ],
+    "confusable_with": [
+      "lunge",
+      "short_lunge"
+    ]
+  },
+  {
+    "id": "lunge",
+    "name_zh": "蹲跳（Lunge）",
+    "aliases": [
+      "Lunge",
+      "Dyno",
+      "蹲跳"
+    ],
+    "category": "動態移動類",
+    "kind": "action",
+    "book_ref": "3-6-2 p.118-119",
+    "description": "双手撑在岩点、脚踩好岩点后，腰部下蹲蓄力，重复数次身体摆荡制造反作用力，朝目标岩点跳跃、双手同时脱离岩壁的动态跳跃技巧；离地速度增加10%，跳的高度会增加21%。",
+    "when_to_use": "当岩点间距遥远或坡度很陡，一般手法无法拉出距离时使用。",
+    "detectability": "rule",
+    "pose_rules": [
+      {
+        "feature": "wrist_visibility",
+        "range": [
+          0.5,
+          1.5
+        ],
+        "soft": 0,
+        "weight": 0,
+        "gate": true,
+        "note": "硬性前提：双手手腕需可见，布尔编码1=可见"
+      },
+      {
+        "feature": "both_hands_release_simultaneously",
+        "range": [
+          0.5,
+          1.5
+        ],
+        "soft": 0,
+        "weight": 0.4,
+        "note": "布尔特征编码：0=false,1=true；蹲跳时双手同时脱离岩点"
+      },
+      {
+        "feature": "peak_com_speed",
+        "range": [
+          1.5,
+          5.0
+        ],
+        "soft": 0.3,
+        "weight": 0.4,
+        "note": "定性推断，单位body_scale/s，待标注数据校准"
+      },
+      {
+        "feature": "displacement_magnitude",
+        "range": [
+          0.8,
+          3.0
+        ],
+        "soft": 0.2,
+        "weight": 0.2,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "起跳前有明显下蹲蓄力与身体摆荡的预备动作，起跳瞬间双手同时离开岩点腾空，落点后需迅速稳住晃动。",
+    "common_errors": [],
+    "confusable_with": [
+      "deadpoint",
+      "short_lunge",
+      "campus_lunge"
+    ]
+  },
+  {
+    "id": "short_lunge",
+    "name_zh": "小蹲跳（Short Lunge）",
+    "aliases": [
+      "Short Lunge",
+      "小蹲跳"
+    ],
+    "category": "動態移動類",
+    "kind": "action",
+    "book_ref": "3-6-3 p.120",
+    "description": "不刻意蓄力、腿伸直以最短距离跳跃，将抓点瞬间的反作用力压到最低的短程动态腳法；有时也会将撑住岩点的双臂打直，缩短与抓取点的距离后再跳，或不靠反作用力直接往上跳。",
+    "when_to_use": "当目标岩点不易支撑、且一般抓法够不到，但幅度较大的蹲跳又可能撑不住时使用，尤其目标岩点很小或方向不佳时有效。",
+    "detectability": "rule",
+    "pose_rules": [
+      {
+        "feature": "displacement_magnitude",
+        "range": [
+          0.2,
+          0.9
+        ],
+        "soft": 0.1,
+        "weight": 0.4,
+        "note": "小蹲跳移动距离比蹲跳短，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "peak_com_speed",
+        "range": [
+          0.8,
+          2.0
+        ],
+        "soft": 0.2,
+        "weight": 0.3,
+        "note": "定性推断"
+      },
+      {
+        "feature": "both_hands_release_simultaneously",
+        "range": [
+          0,
+          1.5
+        ],
+        "soft": 0.2,
+        "weight": 0.3,
+        "note": "手可先拉住再放开，不一定同时脱离，布尔编码0/1，定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "起跳前没有明显下蹲蓄力动作，身体只是稍微下沉后即以最短距离跳出，抓取手对侧手也尽量避免摆荡。",
+    "common_errors": [],
+    "confusable_with": [
+      "lunge",
+      "one_hand_lunge",
+      "deadpoint"
+    ]
+  },
+  {
+    "id": "one_hand_lunge",
+    "name_zh": "單手蹲跳（One-hand Lunge）",
+    "aliases": [
+      "One-hand Lunge",
+      "单手蹲跳"
+    ],
+    "category": "動態移動類",
+    "kind": "action",
+    "book_ref": "3-6-4 p.121",
+    "description": "支撑手停留在体积偏小、只能单手握住的岩点上、下一岩点较远时，腰部垂在支撑手下方蓄力、靠脚力半边跳出的平衡动态跳跃手法；跳的时候双脚都要用到，但因单手会让腰上下摆荡的反作用力不易施展，只要单纯跳出即可。",
+    "when_to_use": "当支撑手只能单手握住岩点、且下一岩点较远时使用。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "both_hands_release_simultaneously",
+        "range": [
+          0,
+          0.5
+        ],
+        "soft": 0.1,
+        "weight": 0.4,
+        "note": "单手蹲跳时支撑手全程停留在岩点上，故双手不会同时脱离，布尔编码0=false，定性推断"
+      },
+      {
+        "feature": "peak_com_speed",
+        "range": [
+          1.0,
+          3.0
+        ],
+        "soft": 0.3,
+        "weight": 0.3,
+        "note": "定性推断"
+      },
+      {
+        "feature": "hip_height_change_pre_post",
+        "range": [
+          0.2,
+          1.5
+        ],
+        "soft": 0.2,
+        "weight": 0.3,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "全程只有一手在岩点上，身体先向下沉甚至做出深度掛旗，随后双脚同时发力跳出但支撑手全程未脱离。",
+    "common_errors": [],
+    "confusable_with": [
+      "short_lunge",
+      "swing_by"
+    ]
+  },
+  {
+    "id": "coordination_lunge",
+    "name_zh": "協調跳躍（Coordination Lunge）",
+    "aliases": [
+      "Coordination Lunge",
+      "协调跳跃"
+    ],
+    "category": "動態移動類",
+    "kind": "action",
+    "book_ref": "3-6-5 p.122",
+    "description": "先抓取中继岩点、再借力抵达目标岩点的动态跳跃，由2~3个动作组成，包含许多体操、特技飞行的要素，重点在于全程身体不打转、各部位动作彼此协调流畅。",
+    "when_to_use": "当较近的中继岩点不佳难以支撑，但其后有2、3个好岩点时使用；在人工路线上使用频率较高。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "动作由多段快速衔接组成（例如左手抓中继点、右手顺势抓後方点、左手再放开中继点上抓、脚再往上掛住岩点），整体一气呵成、身体轨迹呈弧线，涉及多个中继动作，规则引擎难以用单一片段特征描述，建议以视觉判读为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "bump",
+      "lunge"
+    ]
+  },
+  {
+    "id": "swing_by",
+    "name_zh": "重力助推（Swing-by）",
+    "aliases": [
+      "Swing-by",
+      "重力助推"
+    ],
+    "category": "動態移動類",
+    "kind": "action",
+    "book_ref": "3-6-6 p.123",
+    "description": "目标岩点位于侧边或斜上方远处时，双手双脚靠近做出像钟摆一样的左右摆荡，摆荡幅度渐渐增大后朝反方向大幅跳跃抵达目标点的横向跳跃技巧；横向跳跃中摆荡的动能会比拉的动能更高。",
+    "when_to_use": "当目标岩点位于侧边或斜上方远处时使用，适用于任何坡度的壁面。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "peak_com_speed",
+        "range": [
+          1.0,
+          3.5
+        ],
+        "soft": 0.3,
+        "weight": 0.4,
+        "note": "侧向钟摆式摆荡加速，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "segment_duration_s",
+        "range": [
+          1.0,
+          4.0
+        ],
+        "soft": 0.5,
+        "weight": 0.3,
+        "note": "需要多次摆荡累积幅度，耗时较长，定性推断"
+      },
+      {
+        "feature": "displacement_magnitude",
+        "range": [
+          0.8,
+          2.5
+        ],
+        "soft": 0.2,
+        "weight": 0.3,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "身体重复多次左右摆荡，幅度逐渐增大，最后一次摆荡后大幅跳跃抓向反方向的目标点；手一旦放开就无法重来，需搭配放手时机。",
+    "common_errors": [
+      "横向大幅摆荡对肩关节负担大，是运动伤害好发部位"
+    ],
+    "confusable_with": [
+      "outer_flag",
+      "one_hand_lunge"
+    ]
+  },
+  {
+    "id": "cypher",
+    "name_zh": "零式（Cypher）",
+    "aliases": [
+      "Cypher",
+      "零式"
+    ],
+    "category": "動態移動類",
+    "kind": "action",
+    "book_ref": "3-6-7 p.124-125",
+    "description": "支撑手与踩脚在同一侧（平行支撑）、下一岩点距离较远时，先用外侧掛旗法将腰下沉，再把甩出的腿朝前进方向大幅上摆作为推力、带动身体向上抬高再伸手抓点的动态腳法，得名自英国攀岩家班穆（Ben Moon）。",
+    "when_to_use": "支撑手与踩脚在同一侧且下一岩点距离较远时使用。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "甩出的腿以画大弧的方式向外上方摆动，腿摆荡的动能是这个手法最主要的推进力，动作分蓄力/摆荡/抓住三阶段，是较复杂的组合动作，建议以视觉判读为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "outward_flagging",
+      "lunge"
+    ]
+  },
+  {
+    "id": "outward_flagging",
+    "name_zh": "外向掛旗法／逆零式（Outward Flagging）",
+    "aliases": [
+      "Outward Flagging",
+      "外向掛旗法",
+      "逆零式"
+    ],
+    "category": "動態移動類",
+    "kind": "action",
+    "book_ref": "3-6-8 p.126",
+    "description": "支撑手与踩脚位于对角线、下一岩点距离较远时，将甩出的腿在空中先朝前方略抬高、再由身体前面往下摆到身体后侧，透过这个滑行般的动作反作用力将与甩腿相反方向的手伸出。",
+    "when_to_use": "攀爬前倾壁时，支撑手与踩脚位于对角线上、且下一岩点距离较远时使用。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "甩腿是从身体前方往下摆到身体后方（纵向摆荡），与零式的侧向摆荡方向不同，腿部动作路径更接近垂直滑行，建议以视觉判读为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "cypher"
+    ]
+  },
+  {
+    "id": "campus_lunge",
+    "name_zh": "指力跳（Campus Lunge）",
+    "aliases": [
+      "Campus Lunge",
+      "指力跳"
+    ],
+    "category": "動態移動類",
+    "kind": "action",
+    "book_ref": "3-6-9 p.127",
+    "description": "双手撑得很稳但没有腳点、下一岩点距离较远时，完全不靠腳力、双手像吊单杠一样将身体拉高再向下荡、一口气往上拉制造反作用力飞跃约1公尺远的动态手法，包含最多动态要素；背部先向后弯、最后腰往前凸形成く型姿势让身体在空中滑行。",
+    "when_to_use": "双手支撑稳固但没有可用脚点、下一岩点距离较远时使用。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "both_hands_release_simultaneously",
+        "range": [
+          0.5,
+          1.5
+        ],
+        "soft": 0,
+        "weight": 0.4,
+        "note": "指力跳双手同时拉放，布尔编码1=true"
+      },
+      {
+        "feature": "peak_com_speed",
+        "range": [
+          1.2,
+          4.0
+        ],
+        "soft": 0.3,
+        "weight": 0.3,
+        "note": "定性推断，待标注数据校准"
+      },
+      {
+        "feature": "hip_height_change_pre_post",
+        "range": [
+          0.3,
+          1.5
+        ],
+        "soft": 0.2,
+        "weight": 0.3,
+        "note": "全程无脚点支撑，靠手臂拉推身体上升，定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "全程双脚离开岩壁悬空，只靠双手先上拉再向下荡、随后一口气推起身体，背部先向后弯再腰部前凸呈弧形轨迹在空中滑行。",
+    "common_errors": [],
+    "confusable_with": [
+      "lunge",
+      "deadpoint"
+    ]
+  },
+  {
+    "id": "alternating_sequence",
+    "name_zh": "左右輪流",
+    "aliases": [
+      "Alternating",
+      "左右轮流"
+    ],
+    "category": "攀岩的手順",
+    "kind": "action",
+    "book_ref": "3-7-1 p.128",
+    "description": "双手双脚依序、规律地左右交替向上攀爬的基本手顺，是所有路线中使用次数最多、姿势最稳定的手顺；在岩壁坡度平缓且岩点较大的路线上，攀岩者自然会以左右规则交替的方式伸出手脚。",
+    "when_to_use": "即便抓点手感不佳，也建议尽量维持左右轮流的手顺以保持平衡，因为跳点须将手臂伸长不好动作，换手要扭转身体容易不稳。",
+    "detectability": "rule",
+    "pose_rules": [
+      {
+        "feature": "segment_duration_s",
+        "range": [
+          0.3,
+          3.0
+        ],
+        "soft": 0.3,
+        "weight": 0.3,
+        "note": "仅作片段时长弱约束；核心判定逻辑为比较连续片段的dominant_limb是否左右交替出现（L→R→L→R），需规则引擎在片段序列层面实现，非单条阈值可完全表达，定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "连续多个动作中左右手（脚）依序交替支撑与伸出，没有同手连续抓两点（跳点）、没有同点重叠（换手）、也没有交叉动作。",
+    "common_errors": [],
+    "confusable_with": [
+      "change_hand",
+      "bump"
+    ]
+  },
+  {
+    "id": "bump",
+    "name_zh": "跳點（Bump）",
+    "aliases": [
+      "Bump",
+      "跳点"
+    ],
+    "category": "攀岩的手順",
+    "kind": "action",
+    "book_ref": "3-7-2 p.129",
+    "description": "当眼前岩点不易支撑而下一岩点较佳、或下一岩点方向不佳但用反方向的手抓起来更顺、或岩点间距过近时，用同一只手（或脚）连续抓取两个岩点的手顺，中间岩点被当作中继点。",
+    "when_to_use": "眼前岩点不易支撑，下一个较佳岩点又在附近，可把眼前岩点当中继点再跳到下一点；也用于岩点间距过近、直接跳下一手前进更省力时。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "displacement_magnitude",
+        "range": [
+          0.15,
+          0.8
+        ],
+        "soft": 0.1,
+        "weight": 0.3,
+        "note": "跳点通常移动距离较短（中继点到下一点），定性推断，待标注数据校准"
+      },
+      {
+        "feature": "segment_duration_s",
+        "range": [
+          0.2,
+          1.5
+        ],
+        "soft": 0.2,
+        "weight": 0.3,
+        "note": "定性推断"
+      },
+      {
+        "feature": "displacement_direction",
+        "range": [
+          0,
+          1
+        ],
+        "soft": 0,
+        "weight": 0.4,
+        "note": "核心判定逻辑为同一只手/脚在相邻两个片段连续抓取两个岩点（即相邻片段dominant_limb相同），需序列层面比较，此处仅作占位约束，实际判断以规则引擎的片段比较逻辑为主，定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "同一只手（或脚）在很短时间内连续抓取相邻的两个岩点，另一只手保持不动，跳跃幅度不大以确保能抓稳。",
+    "common_errors": [],
+    "confusable_with": [
+      "change_hand",
+      "coordination_lunge",
+      "continuous_change"
+    ]
+  },
+  {
+    "id": "change_hand",
+    "name_zh": "換手（Change）",
+    "aliases": [
+      "Change",
+      "换手",
+      "Piano",
+      "Cup",
+      "Side by Side"
+    ],
+    "category": "攀岩的手順",
+    "kind": "action",
+    "book_ref": "3-7-3 p.130-131",
+    "description": "双手依序抓在同一个岩点上，先手预留空间、后手补上再重新抓稳的手顺，包含钢琴手（Piano，手指依序交叠）、握杯法（Cup，先手包夹岩点两端、后手从上方握住）、换边（Side by Side，突出角落上快速旋转甩到另一侧）等变化型态。",
+    "when_to_use": "附近没有好抓的岩点、必须换手才比较好抓，或为了休息、调整手顺而刻意换手时使用；在峭壁或水平岩壁上换手时应避免同时换脚以维持平衡。",
+    "detectability": "rule_weak",
+    "pose_rules": [
+      {
+        "feature": "hands_gap",
+        "range": [
+          0,
+          0.25
+        ],
+        "soft": 0.05,
+        "weight": 0.5,
+        "note": "换手瞬间双手几乎同时出现在同一岩点，手间距接近0，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "segment_duration_s",
+        "range": [
+          0.1,
+          1.0
+        ],
+        "soft": 0.2,
+        "weight": 0.3,
+        "note": "定性推断"
+      },
+      {
+        "feature": "wrists_crossed",
+        "range": [
+          -0.5,
+          0.5
+        ],
+        "soft": 0.1,
+        "weight": 0.2,
+        "note": "布尔编码0=false；换手通常不交叉（有别于交叉手），定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "两只手先后出现在同一个岩点位置、有短暂交叠动作（手指交叉或叠放），随后先手松开、后手重新抓稳。",
+    "common_errors": [
+      "未提前为另一手预留抓握空间，导致平衡崩解、难以回到原岩点"
+    ],
+    "confusable_with": [
+      "bump",
+      "match",
+      "alternating_sequence"
+    ]
+  },
+  {
+    "id": "cross_move",
+    "name_zh": "交叉手（Cross Move）",
+    "aliases": [
+      "Cross Move",
+      "交叉手"
+    ],
+    "category": "攀岩的手順",
+    "kind": "action",
+    "book_ref": "3-7-4 p.132-133",
+    "description": "手顺为往横向移动、或斜上方有可换手的岩点但位置很差时使用的技巧型手法，双手在身体前或身体下方交叉抓点，也常搭配调节平衡及高跨步一起使用；从交叉手翻身通常比进入交叉手更困难。",
+    "when_to_use": "当手顺为往横向移动、或前进时须连续进行2次较差换手，可用交叉手一次到位。",
+    "detectability": "rule",
+    "pose_rules": [
+      {
+        "feature": "wrist_visibility",
+        "range": [
+          0.5,
+          1.5
+        ],
+        "soft": 0,
+        "weight": 0,
+        "gate": true,
+        "note": "硬性前提：双手手腕需可见，布尔编码1=可见"
+      },
+      {
+        "feature": "wrists_crossed",
+        "range": [
+          0.5,
+          1.5
+        ],
+        "soft": 0,
+        "weight": 0.7,
+        "note": "布尔特征编码：0=false,1=true；交叉手时双手手腕在画面上交叉"
+      },
+      {
+        "feature": "displacement_magnitude",
+        "range": [
+          0.3,
+          1.2
+        ],
+        "soft": 0.2,
+        "weight": 0.3,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "一只手从腋下或身体前方穿过另一只手抓取对侧岩点，双手手腕在画面上呈交叉状，手穿过时会遮住视线因此脚点须事先确认。",
+    "common_errors": [],
+    "confusable_with": [
+      "crossover"
+    ]
+  },
+  {
+    "id": "crossover",
+    "name_zh": "交叉式（Crossover）",
+    "aliases": [
+      "Crossover",
+      "交叉式"
+    ],
+    "category": "攀岩的手順",
+    "kind": "action",
+    "book_ref": "3-7-5 p.134",
+    "description": "朝远方做交叉手时，拉取手抓住容易支撑的岩点、抓取手从肩膀处伸往下一个远处岩点，大幅拉近与远处岩点距离的交叉手法，比一般交叉手移动距离更远；支撑手比起用手臂拉，更重要的是腋下要夹紧。",
+    "when_to_use": "抓取手的目标岩点位于支撑手反方向的远处时使用，动作要迅速，腋下需夹紧以稳住躯干。",
+    "detectability": "rule",
+    "pose_rules": [
+      {
+        "feature": "wrists_crossed",
+        "range": [
+          0.5,
+          1.5
+        ],
+        "soft": 0,
+        "weight": 0.5,
+        "note": "与交叉手相同的交叉判定，布尔编码1=true"
+      },
+      {
+        "feature": "displacement_magnitude",
+        "range": [
+          1.0,
+          3.0
+        ],
+        "soft": 0.2,
+        "weight": 0.5,
+        "note": "交叉式用于拉近与远处岩点的距离，位移显著大于一般交叉手，定性推断，待标注数据校准"
+      }
+    ],
+    "visual_cues_for_claude": "双手交叉幅度比一般交叉手更大，抓取手需大幅伸展几乎到极限，躯干随支撑手旋转、腰部扭转作为动力来源。",
+    "common_errors": [],
+    "confusable_with": [
+      "cross_move",
+      "layback"
+    ]
+  },
+  {
+    "id": "match",
+    "name_zh": "同點（Match）",
+    "aliases": [
+      "Match",
+      "同点"
+    ],
+    "category": "攀岩的手順",
+    "kind": "posture",
+    "book_ref": "3-7-6 p.134",
+    "description": "当路线中怎么都无法用单手支撑某岩点、而下一岩点又很远时，放弃单手支撑、将另一手尽可能重叠上来同抓一点以防止力气流失的手顺；同点要能支撑到抓取下一个岩点前。",
+    "when_to_use": "需要在同一岩点上用双手稳住姿势、支撑到抓取下一个岩点之前使用。",
+    "detectability": "rule",
+    "pose_rules": [
+      {
+        "feature": "wrist_visibility",
+        "range": [
+          0.5,
+          1.5
+        ],
+        "soft": 0,
+        "weight": 0,
+        "gate": true,
+        "note": "硬性前提：双手手腕需可见，布尔编码1=可见"
+      },
+      {
+        "feature": "hands_gap",
+        "range": [
+          0,
+          0.15
+        ],
+        "soft": 0.05,
+        "weight": 0.8,
+        "note": "同点指双手重叠抓在同一岩点，间距趋近于0，定性推断，待标注数据校准"
+      },
+      {
+        "feature": "segment_duration_s",
+        "range": [
+          0.1,
+          1.5
+        ],
+        "soft": 0.2,
+        "weight": 0.2,
+        "note": "定性推断"
+      }
+    ],
+    "visual_cues_for_claude": "两只手同时重叠或紧靠抓在同一个岩点上，双手间距趋近于零，通常伴随双脚也需要靠拢或腰部下沉来维持平衡。",
+    "common_errors": [],
+    "confusable_with": [
+      "change_hand",
+      "regrip"
+    ],
+    "min_hold_s": 0.5
+  },
+  {
+    "id": "regrip",
+    "name_zh": "重抓",
+    "aliases": [
+      "Regrip",
+      "重抓"
+    ],
+    "category": "攀岩的手順",
+    "kind": "action",
+    "book_ref": "3-7-7 p.135",
+    "description": "在同一个岩点上改变同一只手的抓法（例如从上面推改为向上拉、或从正手转为反手）以增加移动距离的实用小技巧，与换手不同（换手是换成另一只手）。",
+    "when_to_use": "抓着岩点将身体往上拉时，若抓点角度改变导致抓不稳，或根据身体高度换个抓法效果更好时使用。",
+    "detectability": "vision",
+    "pose_rules": [],
+    "visual_cues_for_claude": "同一只手停留在同一岩点上，但手掌与手腕的角度、朝向在攀爬过程中发生变化（如从下方抓握转为上方推压），需要清楚看到手掌与岩点的接触方式才能判断，建议以视觉判读为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "match"
+    ]
+  },
+  {
+    "id": "continuous_change",
+    "name_zh": "連續換手",
+    "aliases": [
+      "Continuous Change",
+      "连续换手"
+    ],
+    "category": "攀岩的手順",
+    "kind": "action",
+    "book_ref": "3-7-8 p.135",
+    "description": "想要在3个岩点间搭配手顺、连续进行换手计算时使用的综合手顺规划，例如「左手抓②→右手交叉手抓③→左手下降到④→右手下降到②→左手抓③→右手抓⑤」这类多步骤组合。",
+    "when_to_use": "当需要精算多个岩点间的最佳手部顺序、单一手顺（跳点/换手/交叉）不足以描述整段动作时使用。",
+    "detectability": "manual",
+    "pose_rules": [],
+    "visual_cues_for_claude": "这是由多个基础手顺（换手、交叉手、重抓等）组合而成的策略性序列，本身不是单一可辨识的视觉动作，需综合观察一整段连续画面、甚至配合已识别出的其他手顺片段才能标注，建议以人工标注为主。",
+    "common_errors": [],
+    "confusable_with": [
+      "bump",
+      "change_hand",
+      "cross_move"
+    ]
+  }
+]
