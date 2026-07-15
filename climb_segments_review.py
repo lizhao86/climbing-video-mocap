@@ -77,7 +77,13 @@ def main():
         pil = Image.new("RGB", (W, banner_h), C_MOVE if is_move else C_STAT)
         d = ImageDraw.Draw(pil)
         if is_move:
-            label = f"MOVE #{i}   出{s.get('dominant_limb','')}   {s['start_s']:.1f}-{s['end_s']:.1f}s"
+            limb = s.get("dominant_limb", "")
+            mark = ""
+            if s.get("dominant_limb_source") == "manual":
+                mark = " ✎"          # 人工覆写
+            elif s.get("side_confidence") == "low":
+                mark = "?"           # 深度扭身，左右待核
+            label = f"MOVE #{i}   出{limb}{mark}   {s['start_s']:.1f}-{s['end_s']:.1f}s"
         else:
             label = f"静止 #{i}   {s['start_s']:.1f}-{s['end_s']:.1f}s"
         d.text((16, banner_h * 0.18), label, font=font, fill=(33, 37, 41))

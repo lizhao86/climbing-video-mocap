@@ -21,12 +21,12 @@ import csv, json, sys, os, argparse
 import numpy as np
 
 # ── 分段参数（顶部集中，已用 IMG_6952 调参 2026-07-15）──────────────
-# PLAN 初值 K_HI=1.0/K_LO=0.4 实测只出 7 个 move 段（allspeed 分布重尾，
-# σ=2.71 > mean=2.10，mean+1σ 阈值过高）。0.6/0.2 出 13 段但漏掉慢速爬升
-# （12-15s、24-27s 高度升 2+ 身长却被判 static）。0.4/0.1 → 16 段，
-# 慢速动作被正确切出、休息平台期仍为 static，与高度曲线吻合。
-K_HI      = 0.4    # 进入 move 阈值 = mean + K_HI*σ
-K_LO      = 0.1    # 退出 move 阈值 = mean + K_LO*σ（滞回，抗抖动）
+# 调参记录（IMG_6952）：PLAN 初值 1.0/0.4 只出 7 段（首尾边缘伪影把 σ 撑到
+# 2.71，阈值过高）。加首尾钳制后 σ 降到 1.69，重扫取 0.7/0.3 → 15 段，
+# 关键窗口（起步下蹲/开脚、12-15s 与 24-26s 慢速爬升）全部命中，
+# 休息平台期保持 static。
+K_HI      = 0.7    # 进入 move 阈值 = mean + K_HI*σ
+K_LO      = 0.3    # 退出 move 阈值 = mean + K_LO*σ（滞回，抗抖动）
 GAP_MERGE = 0.40   # 相邻 move 段间隙 < 此秒数则合并
 MIN_MOVE  = 0.25   # 合并后 move 段时长 < 此秒数则丢弃（并回 static）
 SMOOTH_LIMB = 9    # 四肢点平滑窗（与 v1 limb_speed 一致）
@@ -40,14 +40,19 @@ JOINTS = ["nose","left_shoulder","right_shoulder","left_elbow","right_elbow",
 SPEED_JOINTS = ["left_wrist","right_wrist","left_ankle","right_ankle",
                 "left_knee","right_knee"]
 
-# ⚠️ MediaPipe 左右镜像：攀岩视频人背对镜头，MediaPipe 按"面对镜头"假设
-# 输出 left_*/right_*，实际是本人的右/左。2026-07-15 老板核对审阅视频
-# 3 段 + 抽帧确认，此处映射已做互换。v1 报告的左右手统计同样是镜像的。
-LIMB_OF = {"left_wrist": "右手", "right_wrist": "左手",
-           "left_ankle": "右脚", "left_knee": "右脚",
-           "right_ankle": "左脚", "right_knee": "左脚"}
-LIMBS = {"left_wrist": "右手", "right_wrist": "左手",
-         "left_ankle": "右脚", "right_ankle": "左脚"}  # 兼容旧引用（端点四肢）
+# ⚠️ 主导肢体的左右判定（2026-07-16 用 IMG_6952 全量核对得出）：
+# MediaPipe 标签多数段正确（12/15），但扭身/遮挡时会整臂认错人，
+# 且几何位置/肩朝向/骨架链距离等启发式都无法可靠识别这些错误段
+# （全局镜像互换、几何 x 判定均实测翻错更多）。最终方案：
+#   1. 标签默认可信（source=rule）
+#   2. 老板核对的错误段走 annotations/<base>_side_overrides.json
+#      人工覆写（source=manual），与 recognition.json 分层覆写架构一致
+#   3. 躯干朝向不明（|肩向|<0.02，深度扭身）时标 side_confidence=low
+LIMB_NAME = {"left_wrist": "左手", "right_wrist": "右手",
+             "left_ankle": "左脚", "left_knee": "左脚",
+             "right_ankle": "右脚", "right_knee": "右脚"}
+TWIST_ORI_TH = 0.02   # 段内 |右肩x-左肩x| 低于此值 → 深度扭身，左右低置信
+EDGE_CLAMP_S = 0.25   # 首尾钳制时长：平滑+梯度在边界产生假高速（t=0 实测 19bl/s）
 
 
 def load_csv(p):
@@ -105,6 +110,8 @@ def main():
     ap.add_argument("pose2d")
     ap.add_argument("--out", default=None)
     ap.add_argument("--plot", default=None)
+    ap.add_argument("--overrides", default=None,
+                    help="人工左右覆写 JSON（默认 annotations/<base>_side_overrides.json）")
     args = ap.parse_args()
 
     base = os.path.basename(args.pose2d).replace("_pose2d.csv", "").replace(".csv", "")
@@ -134,10 +141,16 @@ def main():
     com_s = smooth2d(com, 13)
 
     # 四肢速度（口径同 v1 limb_speed）
+    n_clamp = max(2, int(EDGE_CLAMP_S * fps))
+
     def limb_speed(n):
         p = smooth2d(P[n], SMOOTH_LIMB)
         v = np.gradient(p, axis=0) / dt[:, None] / body_scale
-        return np.linalg.norm(v, axis=1)
+        s = np.linalg.norm(v, axis=1)
+        # 首尾钳制：平滑窗+梯度的边界伪影会造出 15-20bl/s 的假速度
+        s[:n_clamp] = s[n_clamp]
+        s[-n_clamp:] = s[-n_clamp - 1]
+        return s
     lspeed = {k: limb_speed(k) for k in SPEED_JOINTS}
     allspeed = np.nanmax(np.vstack([lspeed[k] for k in SPEED_JOINTS]), axis=0)
 
@@ -184,13 +197,16 @@ def main():
         seg["com_dy"] = round(float((com1[1] - com0[1]) / body_scale), 3)
         seg["com_disp"] = round(float(np.linalg.norm(com1 - com0) / body_scale), 3)
         if kind == "move":
-            # 主导肢体（"出哪只手/脚"）= 段内累计路程最大的肢体；左右已按镜像修正。
-            # 腿部取 max(踝,膝) 而非相加——踝膝同摆时相加会双倍计数压过手。
-            usage = {"左手": 0.0, "右手": 0.0, "左脚": 0.0, "右脚": 0.0}
-            for k in SPEED_JOINTS:
-                path = float(np.nansum(lspeed[k][i0:i1] * dt[i0:i1]))
-                usage[LIMB_OF[k]] = max(usage[LIMB_OF[k]], path)
-            dom = max(usage, key=usage.get)
+            # 主导肢体（"出哪只手/脚"）= 段内累计路程最大的关节（见头部注释）
+            paths = {k: float(np.nansum(lspeed[k][i0:i1] * dt[i0:i1]))
+                     for k in SPEED_JOINTS}
+            dom_joint = max(paths, key=paths.get)
+            dom = LIMB_NAME[dom_joint]
+            seg["dominant_joint"] = dom_joint
+            # 深度扭身检测：肩连线在画面上投影过短 → 左右低置信
+            ori = np.nanmean(P["right_shoulder"][i0:i1, 0] - P["left_shoulder"][i0:i1, 0])
+            seg["side_confidence"] = "low" if abs(ori) < TWIST_ORI_TH else "high"
+            seg["dominant_limb_source"] = "rule"
             seg["dominant_limb"] = dom
             seg["peak_com_speed"] = round(float(np.nanpercentile(speed_seg(i0, i1), 99)), 2)
             seg["peak_allspeed"] = round(float(np.nanmax(allspeed[i0:i1])), 2)
@@ -205,6 +221,22 @@ def main():
         return np.linalg.norm(vel, axis=1)[i0:i1]
 
     seg_list = [describe(k, a, b) for (k, a, b) in segments]
+
+    # ── 人工左右覆写（老板核对结果，source=manual 优先于 rule）────────
+    ov_path = args.overrides or os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "annotations",
+        f"{base}_side_overrides.json")
+    n_override = 0
+    if os.path.exists(ov_path):
+        for ov in json.load(open(ov_path)):
+            for s in seg_list:
+                if s["kind"] == "move" and s["start_s"] <= ov["t"] <= s["end_s"]:
+                    s["dominant_limb"] = ov["limb"]
+                    s["dominant_limb_source"] = "manual"
+                    s["side_confidence"] = "high"
+                    n_override += 1
+                    break
+
     move_ct = sum(1 for s in seg_list if s["kind"] == "move")
     static_ct = len(seg_list) - move_ct
 
