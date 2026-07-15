@@ -33,19 +33,21 @@ MIN_MOVE  = 0.25   # 合并后 move 段时长 < 此秒数则丢弃（并回 stat
 SMOOTH_LIMB = 9    # 四肢点平滑窗（与 v1 limb_speed 一致）
 # 事件层过滤（对 IMG_6952 人眼时间轴扫参 + 老板反馈校准）
 EV_GAP    = 0.50   # 同肢体相邻事件间隙 < 此秒数合并（一次伸手常带微停顿）
-EV_MIN_DEV = 0.80  # ★灵敏度主旋钮★ run 内距起点最大偏移 < 此值(身长)丢弃。
-                   # IMG_6952 位移分布两簇：0.58-0.66=原地姿态调整（老板判定
-                   # 不算知识库动作），0.93+=真换点，0.8 正好落在缝上
-EV_MIN_DUR = 0.30  # 回吐后事件时长 < 此秒数丢弃
+EV_MIN_NET = 0.50  # ★灵敏度主旋钮★ 净锚点位移：动作前停留位置→动作后停留
+                   # 位置的距离(身长) < 此值丢弃。语义=末端真的换了一个点；
+                   # "探出又收回""原地晃动"净位移≈0，天然被切（老板定义）
+EV_MIN_DUR = 0.15  # 回吐后事件时长 < 此秒数丢弃（0.3 会误杀 0.5s 的快步伐，
+                   # 真假之分交给净锚点位移，时长只滤瞬时抖动）
+ANCHOR_WIN = 0.30  # 锚点取样窗(s)：动作前/后各取此时长的中位数位置
 
 JOINTS = ["nose","left_shoulder","right_shoulder","left_elbow","right_elbow",
           "left_wrist","right_wrist","left_hip","right_hip",
           "left_knee","right_knee","left_ankle","right_ankle"]
 
-# 检测关节池：四肢端点 + 双膝。膝盖纳入是为了捕捉"脚踩住不动、屈膝/开胯
-# 调整"这类端点不动的动作（IMG_6952 实测 23.7-24.2s 有一段纯膝部动作）。
-TRACK_JOINTS = ["left_wrist","right_wrist","left_ankle","right_ankle",
-                "left_knee","right_knee"]
+# 事件触发关节 = 四肢末端（老板定义 2026-07-16：手/脚末端从 A 点挪到
+# B 点才算"真动作/换点"；膝动脚不动、身体拧转都是姿态调整，不触发事件，
+# 那些留给 S4 的 static 段姿势特征去描述）。
+TRACK_JOINTS = ["left_wrist", "right_wrist", "left_ankle", "right_ankle"]
 
 # ⚠️ 主导肢体的左右判定（2026-07-16 用 IMG_6952 全量核对得出）：
 # MediaPipe 标签多数段正确（12/15），但扭身/遮挡时会整臂认错人，
@@ -162,15 +164,13 @@ def main():
     moving = {k: ldisp[k] > D_MOVE for k in TRACK_JOINTS}
 
     # 2) 肢体级换点事件（每一手/每一步，S4 动作识别的基本单元）
-    #    同肢体多关节(踝|膝)掩码取并；事件边界回吐滑窗带来的 ±half 膨胀
-    limb_mask = {}
+    #    每个末端关节独立出事件；成立条件 = 净锚点位移（前停留位→后停留位）
+    n_anchor = max(2, int(ANCHOR_WIN * fps))
+    events = []
     for k in TRACK_JOINTS:
         lb = LIMB_NAME[k]
-        limb_mask[lb] = limb_mask.get(lb, np.zeros(N, bool)) | moving[k]
-    events = []
-    for lb, mask in limb_mask.items():
         lruns = []
-        for r in runs(mask):   # 同肢体间隙 < EV_GAP 合并（一次伸手的微停顿）
+        for r in runs(moving[k]):   # 同末端间隙 < EV_GAP 合并（一次伸手的微停顿）
             if lruns and (t[r[0]] - t[lruns[-1][1] - 1]) < EV_GAP:
                 lruns[-1][1] = r[1]
             else:
@@ -178,22 +178,18 @@ def main():
         for r in lruns:
             # 轻回吐 1/4 窗（全回吐会把短事件裁没）
             i0 = min(r[0] + half // 2, N - 1); i1 = max(r[1] - 1 - half // 2, i0)
-            # 该肢体代表关节：run 内距起点最大偏移最大的（净位移会漏掉
-            # "探出又收回"型调整——路径大但净位移小）
-            jbest, dbest = None, -1.0
-            for k in TRACK_JOINTS:
-                if LIMB_NAME[k] != lb: continue
-                dev = np.linalg.norm(psm[k][r[0]:r[1]] - psm[k][r[0]], axis=1) / body_scale
-                dv = float(np.nanmax(dev)) if len(dev) else 0.0
-                if dv > dbest: jbest, dbest = k, dv
-            if dbest < EV_MIN_DEV or t[i1] - t[i0] < EV_MIN_DUR:
-                continue  # 偏移太小/太短 → 抖动，丢弃
-            dxy = (psm[jbest][i1] - psm[jbest][i0]) / body_scale
+            # 净锚点位移：run 前/后各 ANCHOR_WIN 的中位数位置之差
+            pre = np.nanmedian(psm[k][max(0, r[0] - n_anchor):max(1, r[0])], axis=0)
+            post = np.nanmedian(psm[k][min(r[1], N - 1):min(r[1] + n_anchor, N)], axis=0)
+            dxy = (post - pre) / body_scale
+            net = float(np.linalg.norm(dxy))
+            if net < EV_MIN_NET or t[i1] - t[i0] < EV_MIN_DUR:
+                continue  # 末端没换点（原地调整/探出收回）或太短 → 丢弃
             events.append({
-                "limb": lb, "joint": jbest,
+                "limb": lb, "joint": k,
                 "start_s": round(float(t[i0]), 2), "end_s": round(float(t[i1]), 2),
                 "dur_s": round(float(t[i1] - t[i0]), 2),
-                "disp": round(dbest, 2),
+                "disp": round(net, 2),
                 "dx": round(float(dxy[0]), 2), "dy": round(float(dxy[1]), 2),
                 "source": "rule",
                 "_i0": int(i0), "_i1": int(i1),
