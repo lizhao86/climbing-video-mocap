@@ -34,8 +34,20 @@ SMOOTH_LIMB = 9    # 四肢点平滑窗（与 v1 limb_speed 一致）
 JOINTS = ["nose","left_shoulder","right_shoulder","left_elbow","right_elbow",
           "left_wrist","right_wrist","left_hip","right_hip",
           "left_knee","right_knee","left_ankle","right_ankle"]
-LIMBS = {"left_wrist":"左手","right_wrist":"右手",
-         "left_ankle":"左脚","right_ankle":"右脚"}
+
+# 速度池：四肢端点 + 双膝。膝盖纳入是为了捕捉"脚踩住不动、屈膝/开胯调整"
+# 这类端点不动的动作（IMG_6952 实测在 23.7-24.2s 检出一段纯膝部动作）。
+SPEED_JOINTS = ["left_wrist","right_wrist","left_ankle","right_ankle",
+                "left_knee","right_knee"]
+
+# ⚠️ MediaPipe 左右镜像：攀岩视频人背对镜头，MediaPipe 按"面对镜头"假设
+# 输出 left_*/right_*，实际是本人的右/左。2026-07-15 老板核对审阅视频
+# 3 段 + 抽帧确认，此处映射已做互换。v1 报告的左右手统计同样是镜像的。
+LIMB_OF = {"left_wrist": "右手", "right_wrist": "左手",
+           "left_ankle": "右脚", "left_knee": "右脚",
+           "right_ankle": "左脚", "right_knee": "左脚"}
+LIMBS = {"left_wrist": "右手", "right_wrist": "左手",
+         "left_ankle": "右脚", "right_ankle": "左脚"}  # 兼容旧引用（端点四肢）
 
 
 def load_csv(p):
@@ -126,8 +138,8 @@ def main():
         p = smooth2d(P[n], SMOOTH_LIMB)
         v = np.gradient(p, axis=0) / dt[:, None] / body_scale
         return np.linalg.norm(v, axis=1)
-    lspeed = {k: limb_speed(k) for k in LIMBS}
-    allspeed = np.nanmax(np.vstack([lspeed[k] for k in LIMBS]), axis=0)
+    lspeed = {k: limb_speed(k) for k in SPEED_JOINTS}
+    allspeed = np.nanmax(np.vstack([lspeed[k] for k in SPEED_JOINTS]), axis=0)
 
     mu, sg = np.nanmean(allspeed), np.nanstd(allspeed)
     t_hi = mu + K_HI * sg
@@ -172,8 +184,12 @@ def main():
         seg["com_dy"] = round(float((com1[1] - com0[1]) / body_scale), 3)
         seg["com_disp"] = round(float(np.linalg.norm(com1 - com0) / body_scale), 3)
         if kind == "move":
-            # 主导肢体 = 段内累计路程最大的四肢
-            usage = {LIMBS[k]: float(np.nansum(lspeed[k][i0:i1] * dt[i0:i1])) for k in LIMBS}
+            # 主导肢体（"出哪只手/脚"）= 段内累计路程最大的肢体；左右已按镜像修正。
+            # 腿部取 max(踝,膝) 而非相加——踝膝同摆时相加会双倍计数压过手。
+            usage = {"左手": 0.0, "右手": 0.0, "左脚": 0.0, "右脚": 0.0}
+            for k in SPEED_JOINTS:
+                path = float(np.nansum(lspeed[k][i0:i1] * dt[i0:i1]))
+                usage[LIMB_OF[k]] = max(usage[LIMB_OF[k]], path)
             dom = max(usage, key=usage.get)
             seg["dominant_limb"] = dom
             seg["peak_com_speed"] = round(float(np.nanpercentile(speed_seg(i0, i1), 99)), 2)
