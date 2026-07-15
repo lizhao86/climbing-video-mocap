@@ -1,0 +1,52 @@
+{
+  "title": "IMG_6952",
+  "route": "V2 抱石 · 绿线",
+  "duration_s": 44.7,
+  "frames": 1621,
+  "fps": 35.7,
+  "net_vertical_gain_bodylen": 5.05,
+  "total_path_bodylen": 22.89,
+  "efficiency": 0.221,
+  "vertical": 12.65,
+  "horizontal": 17.37,
+  "mean_com_speed": 0.52,
+  "peak_com_speed": 2.26,
+  "peak_com_accel": 7.3,
+  "smoothness_score": 52.8,
+  "total_moves": 33,
+  "move_stats": {
+    "左手": {
+      "moves": 5,
+      "avg_dur": 0.2761999999999983
+    },
+    "右手": {
+      "moves": 7,
+      "avg_dur": 0.2129999999999997
+    },
+    "左脚": {
+      "moves": 11,
+      "avg_dur": 0.2611818181818174
+    },
+    "右脚": {
+      "moves": 10,
+      "avg_dur": 0.2706999999999997
+    }
+  },
+  "rest_ratio": 0.35,
+  "crux_times_s": [
+    2.4,
+    8.6,
+    29.5,
+    34.0,
+    36.6
+  ],
+  "crux_frames": [
+    87,
+    311,
+    1067,
+    1231,
+    1325
+  ],
+  "left_arm_usage_pct": 32,
+  "left_leg_usage_pct": 55
+}

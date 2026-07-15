@@ -1,0 +1,45 @@
+{
+  "duration_s": 52.9,
+  "frames": 2655,
+  "fps": 50.0,
+  "net_vertical_gain_bodylen": 6.66,
+  "total_path_bodylen": 32.44,
+  "efficiency": 0.205,
+  "vertical_vs_horizontal": [
+    14.2,
+    26.97
+  ],
+  "mean_com_speed_bl_s": 0.62,
+  "peak_com_speed_bl_s": 2.43,
+  "peak_com_accel_bl_s2": 12.5,
+  "smoothness_score": 44.9,
+  "total_moves": 18,
+  "move_stats": {
+    "左手": {
+      "moves": 4,
+      "avg_dur": 0.18925000000000136
+    },
+    "右手": {
+      "moves": 6,
+      "avg_dur": 0.20566666666666591
+    },
+    "左脚": {
+      "moves": 5,
+      "avg_dur": 0.24699999999999864
+    },
+    "右脚": {
+      "moves": 3,
+      "avg_dur": 0.31833333333333186
+    }
+  },
+  "rest_ratio": 0.35,
+  "crux_times_s": [
+    4.86,
+    7.79,
+    19.37,
+    33.81,
+    48.88
+  ],
+  "left_arm_usage_pct": 55.0,
+  "left_leg_usage_pct": 49.0
+}

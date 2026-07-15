@@ -1,0 +1,16 @@
+# 大文件不入库
+*.mov
+*.mp4
+*.MOV
+*.MP4
+*.pdf
+
+# 系统与缓存
+.DS_Store
+__pycache__/
+*.pyc
+
+# 分析产物（图表/截图可复跑生成）
+*/report_assets/
+cases/keyframes/*.jpg
+cases/keyframes/*.png
