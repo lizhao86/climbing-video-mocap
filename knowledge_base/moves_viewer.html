@@ -1,0 +1,1149 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>攀岩动作知识库 · moves.json 浏览器</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --text: #1f2328; --muted: #6b7280;
+    --border: #e5e7eb; --accent: #2563eb;
+    --rule: #16a34a; --rule-bg: #dcfce7;
+    --rule_weak: #d97706; --rule_weak-bg: #fef3c7;
+    --vision: #2563eb; --vision-bg: #dbeafe;
+    --manual: #6b7280; --manual-bg: #e5e7eb;
+    --posture-bg: #f3e8ff; --posture: #7e22ce;
+    --action-bg: #ffe4e6; --action: #be123c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181d; --panel: #1e2128; --text: #e6e8eb; --muted: #9aa2ad;
+      --border: #2c3038; --accent: #60a5fa;
+      --rule-bg: #14351f; --rule_weak-bg: #3a2a0c; --vision-bg: #10243f; --manual-bg: #2c3038;
+      --posture-bg: #2c1f3a; --action-bg: #3a1420;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16181d; --panel: #1e2128; --text: #e6e8eb; --muted: #9aa2ad;
+    --border: #2c3038; --accent: #60a5fa;
+    --rule-bg: #14351f; --rule_weak-bg: #3a2a0c; --vision-bg: #10243f; --manual-bg: #2c3038;
+    --posture-bg: #2c1f3a; --action-bg: #3a1420;
+  }
+  :root[data-theme="light"] {
+    --bg: #f7f7f5; --panel: #ffffff; --text: #1f2328; --muted: #6b7280;
+    --border: #e5e7eb; --accent: #2563eb;
+    --rule-bg: #dcfce7; --rule_weak-bg: #fef3c7; --vision-bg: #dbeafe; --manual-bg: #e5e7eb;
+    --posture-bg: #f3e8ff; --action-bg: #ffe4e6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.55;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--panel); border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+  }
+  header h1 { margin: 0 0 2px; font-size: 18px; }
+  header .stats { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  #search {
+    flex: 1 1 220px; padding: 7px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px;
+  }
+  .chip {
+    padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--muted); font-size: 12.5px; cursor: pointer; user-select: none;
+    white-space: nowrap;
+  }
+  .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  main { max-width: 980px; margin: 0 auto; padding: 16px 20px 60px; }
+  .cat-heading {
+    margin: 26px 0 10px; font-size: 15px; font-weight: 700; color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .cat-heading .n { font-weight: 400; font-size: 12.5px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px; scroll-margin-top: 130px;
+  }
+  .card.dim { display: none; }
+  .card-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 10px; }
+  .card-top .name { font-size: 16px; font-weight: 700; }
+  .card-top .id { color: var(--muted); font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
+  .badge { font-size: 11.5px; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+  .badge.rule { background: var(--rule-bg); color: var(--rule); }
+  .badge.rule_weak { background: var(--rule_weak-bg); color: var(--rule_weak); }
+  .badge.vision { background: var(--vision-bg); color: var(--vision); }
+  .badge.manual { background: var(--manual-bg); color: var(--manual); }
+  .badge.posture { background: var(--posture-bg); color: var(--posture); }
+  .badge.action { background: var(--action-bg); color: var(--action); }
+  .badge.ref { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+  .aliases { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .section { margin-top: 10px; font-size: 13.5px; }
+  .section .label { color: var(--muted); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 3px; }
+  ul.errs { margin: 4px 0 0; padding-left: 18px; }
+  .rules-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 4px; }
+  .rules-table th, .rules-table td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+  .rules-table th { color: var(--muted); font-weight: 600; }
+  .rules-table .note { color: var(--muted); font-style: italic; }
+  .confusable { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .confusable a {
+    font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--bg);
+    border: 1px solid var(--border); color: var(--accent); text-decoration: none;
+  }
+  .confusable a:hover { border-color: var(--accent); }
+  .empty-hint { color: var(--muted); text-align: center; padding: 40px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>攀岩动作知识库</h1>
+  <div class="stats">共 54 个动作 · 腳法基礎 9 / 吊掛類 5 / 手塞 7 / 腳塞 3 / 調節平衡類 5 / 推拉類 2 / 反作用力類 6 / 動態移動類 9 / 攀岩的手順 8</div>
+  <div class="controls">
+    <input id="search" type="text" placeholder="搜索 id / 中文名 / 别名…">
+    <span class="chip active" data-group="cat" data-val="__all__">全部分类</span>
+    <span class="chip" data-group="cat" data-val="動態移動類">動態移動類 (9)</span><span class="chip" data-group="cat" data-val="反作用力類">反作用力類 (6)</span><span class="chip" data-group="cat" data-val="吊掛類">吊掛類 (5)</span><span class="chip" data-group="cat" data-val="手塞">手塞 (7)</span><span class="chip" data-group="cat" data-val="推拉類">推拉類 (2)</span><span class="chip" data-group="cat" data-val="攀岩的手順">攀岩的手順 (8)</span><span class="chip" data-group="cat" data-val="腳塞">腳塞 (3)</span><span class="chip" data-group="cat" data-val="腳法基礎">腳法基礎 (9)</span><span class="chip" data-group="cat" data-val="調節平衡類">調節平衡類 (5)</span>
+  </div>
+  <div class="controls" style="margin-top:6px">
+    <span class="chip active" data-group="det" data-val="__all__">全部可判性</span>
+    <span class="chip" data-group="det" data-val="rule">规则可判 (9)</span><span class="chip" data-group="det" data-val="rule_weak">规则弱（需视觉确认） (19)</span><span class="chip" data-group="det" data-val="vision">视觉判定 (15)</span><span class="chip" data-group="det" data-val="manual">人工标注 (11)</span>
+    <span class="chip active" data-group="kind" data-val="__all__">全部类型</span>
+    <span class="chip" data-group="kind" data-val="posture">静态姿势 (36)</span><span class="chip" data-group="kind" data-val="action">动态动作 (18)</span>
+  </div>
+</header>
+<main id="main">
+<div class='cat-heading' data-cat='動態移動類'>動態移動類 <span class='n'>(9)</span></div>
+<div class="card" id="deadpoint" data-cat="動態移動類" data-det="rule_weak" data-kind="action" data-search="deadpoint 靜止點（deadpoint） deadpoint 静止点 動態移動類 3-6-1 p.117">
+  <div class="card-top">
+    <span class="name">靜止點（Deadpoint）</span>
+    <span class="id">deadpoint</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-6-1 p.117</span>
+    
+  </div>
+  <div class='aliases'>别名：Deadpoint、静止点</div>
+  <div class="section">双手将身体快速拉向壁面、在跳起高度停止的瞬间（体重负荷瞬间减轻、近乎无重力）抓取下一岩点的动态腳法；不能只靠双手拉，还要有意识地运用上半身的摆荡。</div>
+  <div class='section'><div class='label'>适用情境</div>当双手支撑的岩点小或不易支撑、难以放开单手去抓下一岩点时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>身体先加速贴向岩壁再于最高点短暂停顿，随即单手伸出抓点，动作节奏感强，落点后有明显缓冲。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>peak_com_speed</td><td>[0.8, 3.0]</td><td></td><td>0.2</td><td>0.4</td><td></td><td class='note'>跳至最高点瞬间接近静止前需先有加速过程，单位为body_scale/s，定性推断，待标注数据校准</td></tr><tr><td>segment_duration_s</td><td>[0.2, 1.2]</td><td></td><td>0.2</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr><tr><td>both_hands_release_simultaneously</td><td>[0, 0.5]</td><td></td><td>0.1</td><td>0.3</td><td></td><td class='note'>布尔特征编码：0=false,1=true；静止点通常仍有一手在支撑，双手同时脱离机率低</td></tr></tbody></table></div>
+  <div class='section'><div class='label'>常见错误</div><ul class='errs'><li>伸手时机太早导致距离不够，太晚则抓点瞬间负担过大</li></ul></div>
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#lunge'>lunge</a><a href='#short_lunge'>short_lunge</a></div></div>
+</div>
+
+<div class="card" id="lunge" data-cat="動態移動類" data-det="rule" data-kind="action" data-search="lunge 蹲跳（lunge） lunge dyno 蹲跳 動態移動類 3-6-2 p.118-119">
+  <div class="card-top">
+    <span class="name">蹲跳（Lunge）</span>
+    <span class="id">lunge</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule">规则可判</span>
+    <span class="badge ref">3-6-2 p.118-119</span>
+    
+  </div>
+  <div class='aliases'>别名：Lunge、Dyno、蹲跳</div>
+  <div class="section">双手撑在岩点、脚踩好岩点后，腰部下蹲蓄力，重复数次身体摆荡制造反作用力，朝目标岩点跳跃、双手同时脱离岩壁的动态跳跃技巧；离地速度增加10%，跳的高度会增加21%。</div>
+  <div class='section'><div class='label'>适用情境</div>当岩点间距遥远或坡度很陡，一般手法无法拉出距离时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>起跳前有明显下蹲蓄力与身体摆荡的预备动作，起跳瞬间双手同时离开岩点腾空，落点后需迅速稳住晃动。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>wrist_visibility</td><td>[0.5, 1.5]</td><td></td><td>0</td><td>0</td><td>是</td><td class='note'>硬性前提：双手手腕需可见，布尔编码1=可见</td></tr><tr><td>both_hands_release_simultaneously</td><td>[0.5, 1.5]</td><td></td><td>0</td><td>0.4</td><td></td><td class='note'>布尔特征编码：0=false,1=true；蹲跳时双手同时脱离岩点</td></tr><tr><td>peak_com_speed</td><td>[1.5, 5.0]</td><td></td><td>0.3</td><td>0.4</td><td></td><td class='note'>定性推断，单位body_scale/s，待标注数据校准</td></tr><tr><td>displacement_magnitude</td><td>[0.8, 3.0]</td><td></td><td>0.2</td><td>0.2</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#deadpoint'>deadpoint</a><a href='#short_lunge'>short_lunge</a><a href='#campus_lunge'>campus_lunge</a></div></div>
+</div>
+
+<div class="card" id="short_lunge" data-cat="動態移動類" data-det="rule" data-kind="action" data-search="short_lunge 小蹲跳（short lunge） short lunge 小蹲跳 動態移動類 3-6-3 p.120">
+  <div class="card-top">
+    <span class="name">小蹲跳（Short Lunge）</span>
+    <span class="id">short_lunge</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule">规则可判</span>
+    <span class="badge ref">3-6-3 p.120</span>
+    
+  </div>
+  <div class='aliases'>别名：Short Lunge、小蹲跳</div>
+  <div class="section">不刻意蓄力、腿伸直以最短距离跳跃，将抓点瞬间的反作用力压到最低的短程动态腳法；有时也会将撑住岩点的双臂打直，缩短与抓取点的距离后再跳，或不靠反作用力直接往上跳。</div>
+  <div class='section'><div class='label'>适用情境</div>当目标岩点不易支撑、且一般抓法够不到，但幅度较大的蹲跳又可能撑不住时使用，尤其目标岩点很小或方向不佳时有效。</div>
+  <div class='section'><div class='label'>视觉线索</div>起跳前没有明显下蹲蓄力动作，身体只是稍微下沉后即以最短距离跳出，抓取手对侧手也尽量避免摆荡。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>displacement_magnitude</td><td>[0.2, 0.9]</td><td></td><td>0.1</td><td>0.4</td><td></td><td class='note'>小蹲跳移动距离比蹲跳短，定性推断，待标注数据校准</td></tr><tr><td>peak_com_speed</td><td>[0.8, 2.0]</td><td></td><td>0.2</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr><tr><td>both_hands_release_simultaneously</td><td>[0, 1.5]</td><td></td><td>0.2</td><td>0.3</td><td></td><td class='note'>手可先拉住再放开，不一定同时脱离，布尔编码0/1，定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#lunge'>lunge</a><a href='#one_hand_lunge'>one_hand_lunge</a><a href='#deadpoint'>deadpoint</a></div></div>
+</div>
+
+<div class="card" id="one_hand_lunge" data-cat="動態移動類" data-det="rule_weak" data-kind="action" data-search="one_hand_lunge 單手蹲跳（one-hand lunge） one-hand lunge 单手蹲跳 動態移動類 3-6-4 p.121">
+  <div class="card-top">
+    <span class="name">單手蹲跳（One-hand Lunge）</span>
+    <span class="id">one_hand_lunge</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-6-4 p.121</span>
+    
+  </div>
+  <div class='aliases'>别名：One-hand Lunge、单手蹲跳</div>
+  <div class="section">支撑手停留在体积偏小、只能单手握住的岩点上、下一岩点较远时，腰部垂在支撑手下方蓄力、靠脚力半边跳出的平衡动态跳跃手法；跳的时候双脚都要用到，但因单手会让腰上下摆荡的反作用力不易施展，只要单纯跳出即可。</div>
+  <div class='section'><div class='label'>适用情境</div>当支撑手只能单手握住岩点、且下一岩点较远时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>全程只有一手在岩点上，身体先向下沉甚至做出深度掛旗，随后双脚同时发力跳出但支撑手全程未脱离。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>both_hands_release_simultaneously</td><td>[0, 0.5]</td><td></td><td>0.1</td><td>0.4</td><td></td><td class='note'>单手蹲跳时支撑手全程停留在岩点上，故双手不会同时脱离，布尔编码0=false，定性推断</td></tr><tr><td>peak_com_speed</td><td>[1.0, 3.0]</td><td></td><td>0.3</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr><tr><td>hip_height_change_pre_post</td><td>[0.2, 1.5]</td><td></td><td>0.2</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#short_lunge'>short_lunge</a><a href='#swing_by'>swing_by</a></div></div>
+</div>
+
+<div class="card" id="coordination_lunge" data-cat="動態移動類" data-det="vision" data-kind="action" data-search="coordination_lunge 協調跳躍（coordination lunge） coordination lunge 协调跳跃 動態移動類 3-6-5 p.122">
+  <div class="card-top">
+    <span class="name">協調跳躍（Coordination Lunge）</span>
+    <span class="id">coordination_lunge</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">3-6-5 p.122</span>
+    
+  </div>
+  <div class='aliases'>别名：Coordination Lunge、协调跳跃</div>
+  <div class="section">先抓取中继岩点、再借力抵达目标岩点的动态跳跃，由2~3个动作组成，包含许多体操、特技飞行的要素，重点在于全程身体不打转、各部位动作彼此协调流畅。</div>
+  <div class='section'><div class='label'>适用情境</div>当较近的中继岩点不佳难以支撑，但其后有2、3个好岩点时使用；在人工路线上使用频率较高。</div>
+  <div class='section'><div class='label'>视觉线索</div>动作由多段快速衔接组成（例如左手抓中继点、右手顺势抓後方点、左手再放开中继点上抓、脚再往上掛住岩点），整体一气呵成、身体轨迹呈弧线，涉及多个中继动作，规则引擎难以用单一片段特征描述，建议以视觉判读为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#bump'>bump</a><a href='#lunge'>lunge</a></div></div>
+</div>
+
+<div class="card" id="swing_by" data-cat="動態移動類" data-det="rule_weak" data-kind="action" data-search="swing_by 重力助推（swing-by） swing-by 重力助推 動態移動類 3-6-6 p.123">
+  <div class="card-top">
+    <span class="name">重力助推（Swing-by）</span>
+    <span class="id">swing_by</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-6-6 p.123</span>
+    
+  </div>
+  <div class='aliases'>别名：Swing-by、重力助推</div>
+  <div class="section">目标岩点位于侧边或斜上方远处时，双手双脚靠近做出像钟摆一样的左右摆荡，摆荡幅度渐渐增大后朝反方向大幅跳跃抵达目标点的横向跳跃技巧；横向跳跃中摆荡的动能会比拉的动能更高。</div>
+  <div class='section'><div class='label'>适用情境</div>当目标岩点位于侧边或斜上方远处时使用，适用于任何坡度的壁面。</div>
+  <div class='section'><div class='label'>视觉线索</div>身体重复多次左右摆荡，幅度逐渐增大，最后一次摆荡后大幅跳跃抓向反方向的目标点；手一旦放开就无法重来，需搭配放手时机。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>peak_com_speed</td><td>[1.0, 3.5]</td><td></td><td>0.3</td><td>0.4</td><td></td><td class='note'>侧向钟摆式摆荡加速，定性推断，待标注数据校准</td></tr><tr><td>segment_duration_s</td><td>[1.0, 4.0]</td><td></td><td>0.5</td><td>0.3</td><td></td><td class='note'>需要多次摆荡累积幅度，耗时较长，定性推断</td></tr><tr><td>displacement_magnitude</td><td>[0.8, 2.5]</td><td></td><td>0.2</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  <div class='section'><div class='label'>常见错误</div><ul class='errs'><li>横向大幅摆荡对肩关节负担大，是运动伤害好发部位</li></ul></div>
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#outer_flag'>outer_flag</a><a href='#one_hand_lunge'>one_hand_lunge</a></div></div>
+</div>
+
+<div class="card" id="cypher" data-cat="動態移動類" data-det="vision" data-kind="action" data-search="cypher 零式（cypher） cypher 零式 動態移動類 3-6-7 p.124-125">
+  <div class="card-top">
+    <span class="name">零式（Cypher）</span>
+    <span class="id">cypher</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">3-6-7 p.124-125</span>
+    
+  </div>
+  <div class='aliases'>别名：Cypher、零式</div>
+  <div class="section">支撑手与踩脚在同一侧（平行支撑）、下一岩点距离较远时，先用外侧掛旗法将腰下沉，再把甩出的腿朝前进方向大幅上摆作为推力、带动身体向上抬高再伸手抓点的动态腳法，得名自英国攀岩家班穆（Ben Moon）。</div>
+  <div class='section'><div class='label'>适用情境</div>支撑手与踩脚在同一侧且下一岩点距离较远时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>甩出的腿以画大弧的方式向外上方摆动，腿摆荡的动能是这个手法最主要的推进力，动作分蓄力/摆荡/抓住三阶段，是较复杂的组合动作，建议以视觉判读为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#outward_flagging'>outward_flagging</a><a href='#lunge'>lunge</a></div></div>
+</div>
+
+<div class="card" id="outward_flagging" data-cat="動態移動類" data-det="vision" data-kind="action" data-search="outward_flagging 外向掛旗法／逆零式（outward flagging） outward flagging 外向掛旗法 逆零式 動態移動類 3-6-8 p.126">
+  <div class="card-top">
+    <span class="name">外向掛旗法／逆零式（Outward Flagging）</span>
+    <span class="id">outward_flagging</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">3-6-8 p.126</span>
+    
+  </div>
+  <div class='aliases'>别名：Outward Flagging、外向掛旗法、逆零式</div>
+  <div class="section">支撑手与踩脚位于对角线、下一岩点距离较远时，将甩出的腿在空中先朝前方略抬高、再由身体前面往下摆到身体后侧，透过这个滑行般的动作反作用力将与甩腿相反方向的手伸出。</div>
+  <div class='section'><div class='label'>适用情境</div>攀爬前倾壁时，支撑手与踩脚位于对角线上、且下一岩点距离较远时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>甩腿是从身体前方往下摆到身体后方（纵向摆荡），与零式的侧向摆荡方向不同，腿部动作路径更接近垂直滑行，建议以视觉判读为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#cypher'>cypher</a></div></div>
+</div>
+
+<div class="card" id="campus_lunge" data-cat="動態移動類" data-det="rule_weak" data-kind="action" data-search="campus_lunge 指力跳（campus lunge） campus lunge 指力跳 動態移動類 3-6-9 p.127">
+  <div class="card-top">
+    <span class="name">指力跳（Campus Lunge）</span>
+    <span class="id">campus_lunge</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-6-9 p.127</span>
+    
+  </div>
+  <div class='aliases'>别名：Campus Lunge、指力跳</div>
+  <div class="section">双手撑得很稳但没有腳点、下一岩点距离较远时，完全不靠腳力、双手像吊单杠一样将身体拉高再向下荡、一口气往上拉制造反作用力飞跃约1公尺远的动态手法，包含最多动态要素；背部先向后弯、最后腰往前凸形成く型姿势让身体在空中滑行。</div>
+  <div class='section'><div class='label'>适用情境</div>双手支撑稳固但没有可用脚点、下一岩点距离较远时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>全程双脚离开岩壁悬空，只靠双手先上拉再向下荡、随后一口气推起身体，背部先向后弯再腰部前凸呈弧形轨迹在空中滑行。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>both_hands_release_simultaneously</td><td>[0.5, 1.5]</td><td></td><td>0</td><td>0.4</td><td></td><td class='note'>指力跳双手同时拉放，布尔编码1=true</td></tr><tr><td>peak_com_speed</td><td>[1.2, 4.0]</td><td></td><td>0.3</td><td>0.3</td><td></td><td class='note'>定性推断，待标注数据校准</td></tr><tr><td>hip_height_change_pre_post</td><td>[0.3, 1.5]</td><td></td><td>0.2</td><td>0.3</td><td></td><td class='note'>全程无脚点支撑，靠手臂拉推身体上升，定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#lunge'>lunge</a><a href='#deadpoint'>deadpoint</a></div></div>
+</div>
+<div class='cat-heading' data-cat='反作用力類'>反作用力類 <span class='n'>(6)</span></div>
+<div class="card" id="drop_knee" data-cat="反作用力類" data-det="rule_weak" data-kind="posture" data-search="drop_knee 垂膝式（drop knee） drop knee 垂膝式 垂膝掛旗法 反作用力類 3-5-1 p.102-105">
+  <div class="card-top">
+    <span class="name">垂膝式（Drop Knee）</span>
+    <span class="id">drop_knee</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-5-1 p.102-105</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Drop Knee、垂膝式、垂膝掛旗法</div>
+  <div class="section">反作用力类腳法代表，双脚一前一后蹬住岩点，后腿膝盖向下内转产生反作用力，配合腰部旋转将上半身向抓取手方向抬高；也可搭配掛旗形成垂膝掛旗法，腳尖将岩点往下拉的动作使身体向上。</div>
+  <div class='section'><div class='label'>适用情境</div>从垂直岩壁到水平岩壁皆适用，只要岩点大致平行排列、双脚能一前一后踩住即可使用；蹬腳内侧负担太大时韧带有可能受伤须小心。</div>
+  <div class='section'><div class='label'>视觉线索</div>后腿膝盖明显向内下方旋转、几乎指向地面，髋部贴近岩壁旋转，上半身随之朝抓取手方向抬升。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>knee_angle</td><td>[30, 100]</td><td>either</td><td>10</td><td>0.4</td><td></td><td class='note'>垂膝式后腿膝盖深度弯曲内转，定性推断，待标注数据校准</td></tr><tr><td>hip_wall_proxy</td><td>[0.5, 1.0]</td><td></td><td>0.1</td><td>0.3</td><td></td><td class='note'>髋部贴近岩壁，代理值越高表示越贴墙，定性推断</td></tr><tr><td>torso_lean</td><td>[-10, 20]</td><td></td><td>5</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  <div class='section'><div class='label'>常见错误</div><ul class='errs'><li>蹬脚内侧负担过大可能造成韧带受伤，需小心力道</li></ul></div>
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#stemming'>stemming</a><a href='#knee_bar'>knee_bar</a><a href='#high_step'>high_step</a></div></div>
+</div>
+
+<div class="card" id="stemming" data-cat="反作用力類" data-det="rule" data-kind="posture" data-search="stemming 外撐（stemming） stemming 外撑 反作用力類 3-5-2 p.106-107">
+  <div class="card-top">
+    <span class="name">外撐（Stemming）</span>
+    <span class="id">stemming</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule">规则可判</span>
+    <span class="badge ref">3-5-2 p.106-107</span>
+    <span class='badge ref'>min_hold 1.5s</span>
+  </div>
+  <div class='aliases'>别名：Stemming、外撑</div>
+  <div class="section">把脚抵在墙上或相对的岩壁/岩点两侧、靠反作用力使身体稳定的支撑腳法，适用于角落或宽阔的凹角地形，若没有岩点也可用摩（以鞋底压岩壁）来保持稳定。</div>
+  <div class='section'><div class='label'>适用情境</div>主要用于凹陷的壁面与地形，若大型人工岩点位置等高、能让双脚张开抵住时也可使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>双脚大幅张开分别抵住两侧岩壁或岩点，身体重心在两脚之间偏前或偏后依地形而定，双手负担明显减轻甚至可放开。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>ankle_visibility</td><td>[0.5, 1.5]</td><td></td><td>0</td><td>0</td><td>是</td><td class='note'>硬性前提：双脚脚踝需可见，布尔编码1=可见</td></tr><tr><td>feet_spread</td><td>[0.9, 2.0]</td><td></td><td>0.1</td><td>0.6</td><td></td><td class='note'>外撑双脚需大幅张开抵住相对岩壁/岩点，定性推断，待标注数据校准</td></tr><tr><td>hip_angle</td><td>[150, 200]</td><td></td><td>10</td><td>0.4</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#drop_knee'>drop_knee</a><a href='#side_push'>side_push</a><a href='#back_and_foot'>back_and_foot</a></div></div>
+</div>
+
+<div class="card" id="layback" data-cat="反作用力類" data-det="rule_weak" data-kind="posture" data-search="layback 側身（lay back） lay back 侧身 反作用力類 3-5-3 p.108-109">
+  <div class="card-top">
+    <span class="name">側身（Lay Back）</span>
+    <span class="id">layback</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-5-3 p.108-109</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Lay Back、侧身</div>
+  <div class="section">手拉、脚蹬纵长形岩点，左右手脚轮流交替攀爬的技巧，适合垂直排列的岩点、角落边缘、裂隙或直向断层；姿势容易歪掉，须小心维持平衡，手脚伸直能降低横向摆荡速度、更容易控制姿势。</div>
+  <div class='section'><div class='label'>适用情境</div>当岩点直向排列在垂直或坡度平缓的前倾壁上，且大小能用脚抵住并用手拉住时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>身体侧面靠近岩壁，一手拇指朝下一手拇指朝上交叉抓握纵长岩点，双脚同时抵在岩点或壁面上蹬撑，身体呈侧倾姿态。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>torso_lean</td><td>[20, 60]</td><td></td><td>10</td><td>0.4</td><td></td><td class='note'>侧身时身体侧倾角度明显，定性推断，待标注数据校准</td></tr><tr><td>shoulder_width_ratio</td><td>[0.5, 0.9]</td><td></td><td>0.05</td><td>0.3</td><td></td><td class='note'>身体侧对岩壁，肩宽在画面中的投影比例变小，定性推断</td></tr><tr><td>feet_spread</td><td>[0.1, 0.6]</td><td></td><td>0.1</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  <div class='section'><div class='label'>常见错误</div><ul class='errs'><li>长时间用手硬拉、脚硬蹬会加速疲劳，应兼顾平衡与速度</li></ul></div>
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#side_push'>side_push</a><a href='#crossover'>crossover</a></div></div>
+</div>
+
+<div class="card" id="knee_bar" data-cat="反作用力類" data-det="rule_weak" data-kind="posture" data-search="knee_bar 鎖膝法（knee bar） knee bar 锁膝法 反作用力類 3-5-4 p.110">
+  <div class="card-top">
+    <span class="name">鎖膝法（Knee Bar）</span>
+    <span class="id">knee_bar</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-5-4 p.110</span>
+    <span class='badge ref'>min_hold 3.0s</span>
+  </div>
+  <div class='aliases'>别名：Knee Bar、锁膝法</div>
+  <div class="section">一脚踩在岩点上、其上方有更大或朝下凹的岩点刚好位于膝部位置时，用膝盖顶端顶住上方岩点、脚踝下压获得反作用力固定身体的腳法，锁定良好时甚至能放开双手休息，调整脚踝弯曲角度可改变施加的力量。</div>
+  <div class='section'><div class='label'>适用情境</div>现场能施展锁膝法的位置机会不多，但一旦有可以让手放松休息。</div>
+  <div class='section'><div class='label'>视觉线索</div>单腿膝盖深度弯曲、卡入上方岩点与下方脚点之间形成夹角，双手可能完全放开或轻放，常作为休息姿势。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>knee_angle</td><td>[20, 80]</td><td>either</td><td>10</td><td>0.5</td><td></td><td class='note'>锁膝法膝盖深度弯曲卡入上方岩点下方，定性推断，待标注数据校准</td></tr><tr><td>hands_gap</td><td>[0.3, 2.0]</td><td></td><td>0.1</td><td>0.2</td><td></td><td class='note'>锁定良好时可放开双手休息，双手间距不受限，定性推断</td></tr><tr><td>hip_angle</td><td>[60, 140]</td><td></td><td>10</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  <div class='section'><div class='label'>常见错误</div><ul class='errs'><li>蹬脚内侧负担过大可能造成韧带受伤，需小心力道</li></ul></div>
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#drop_knee'>drop_knee</a></div></div>
+</div>
+
+<div class="card" id="side_push" data-cat="反作用力類" data-det="rule_weak" data-kind="posture" data-search="side_push 側推（side push） side push 侧推 反作用力類 3-5-5 p.110">
+  <div class="card-top">
+    <span class="name">側推（Side Push）</span>
+    <span class="id">side_push</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-5-5 p.110</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Side Push、侧推</div>
+  <div class="section">脚点直向排列、侧边有岩点可用全身抵住时的推撑腳法，透过手脚在对角上抵住获得最长的支撑距离，基本上手肘须打直，再透过膝部角度调整抵住岩点的力量。</div>
+  <div class='section'><div class='label'>适用情境</div>腳点直向而侧边有岩点、可用全身力量抵住时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>手脚呈对角方向大幅撑开推住岩点，手肘打直，腹肌背肌等核心明显收紧以稳定身体。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>feet_spread</td><td>[0.8, 2.0]</td><td></td><td>0.1</td><td>0.4</td><td></td><td class='note'>侧推双脚或手脚呈对角大幅撑开，定性推断，待标注数据校准</td></tr><tr><td>hands_gap</td><td>[0.5, 1.5]</td><td></td><td>0.1</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr><tr><td>elbow_angle</td><td>[150, 180]</td><td>either</td><td>10</td><td>0.3</td><td></td><td class='note'>手臂需打直才能有效抵撑，定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#stemming'>stemming</a><a href='#upper_push'>upper_push</a></div></div>
+</div>
+
+<div class="card" id="upper_push" data-cat="反作用力類" data-det="rule_weak" data-kind="posture" data-search="upper_push 上推（upper push） upper push 上推 反作用力類 3-5-6 p.111">
+  <div class="card-top">
+    <span class="name">上推（Upper Push）</span>
+    <span class="id">upper_push</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-5-6 p.111</span>
+    <span class='badge ref'>min_hold 0.8s</span>
+  </div>
+  <div class='aliases'>别名：Upper Push、上推</div>
+  <div class="section">肩膀上方有较大岩点或朝下的高低差时，用手背抵住肩膀正上方位置向上推撑身体前进的推拉类手法，手臂打直后能不使用指力抓握而让手休息。</div>
+  <div class='section'><div class='label'>适用情境</div>一般用于朝下的高低差，也适用朝旁边的高低差；理论上同侧手脚较容易施力，但对角推也可以。</div>
+  <div class='section'><div class='label'>视觉线索</div>手背靠在肩膀正上方向上顶推，手臂逐渐打直，双脚打开形成三点支撑。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>wrist_rel_shoulder_y</td><td>[-0.3, 0.3]</td><td>either</td><td>0.1</td><td>0.4</td><td></td><td class='note'>上推手掌高度约在肩膀附近，非高举过头，定性推断，待标注数据校准</td></tr><tr><td>elbow_angle</td><td>[150, 180]</td><td>either</td><td>10</td><td>0.3</td><td></td><td class='note'>推到顶点时手肘打直，定性推断</td></tr><tr><td>feet_spread</td><td>[0.3, 1.0]</td><td></td><td>0.1</td><td>0.3</td><td></td><td class='note'>双脚打开形成三点支撑，定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#mantling'>mantling</a><a href='#side_push'>side_push</a></div></div>
+</div>
+<div class='cat-heading' data-cat='吊掛類'>吊掛類 <span class='n'>(5)</span></div>
+<div class="card" id="heel_hook" data-cat="吊掛類" data-det="rule" data-kind="posture" data-search="heel_hook 掛腳（heel hook） heel hook 掛脚 挂脚 吊掛類 2-4-6-(1) p.59-60；3-3 p.88-91">
+  <div class="card-top">
+    <span class="name">掛腳（Heel Hook）</span>
+    <span class="id">heel_hook</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule">规则可判</span>
+    <span class="badge ref">2-4-6-(1) p.59-60；3-3 p.88-91</span>
+    <span class='badge ref'>min_hold 1.5s</span>
+  </div>
+  <div class='aliases'>别名：Heel Hook、掛脚、挂脚</div>
+  <div class="section">把攀岩鞋的脚跟掛在岩点上、往下拉将身体往上抬的腳法，相当于第三只手，能运用大腿后侧腿后肌与小腿肚腓肠肌等強壮肌肉，不易疲劳僵硬，也是唯一能从比重心高的位置将身体往上拉的腳法。</div>
+  <div class='section'><div class='label'>适用情境</div>在前倾壁攀岩时，少了高于重心的拉力身体就会不稳定，此时用掛脚补足；也能有效阻止身体旋转(摆荡)，是攀岩中效率最高的腳法之一。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察是否有一只脚的脚跟(而非脚尖)钩挂在高处或身侧的岩点上，往下拉产生支撑力，常伴随身体后仰或侧倾；注意区分手脚同点时的外掛/内掛。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>ankle_visibility</td><td>[0.5, 1.5]</td><td></td><td>0</td><td>0</td><td>是</td><td class='note'>硬性前提：脚踝关键点需可见，布尔编码1=可见，不满足则该片段confidence=null</td></tr><tr><td>ankle_rel_hip_y</td><td>[-1.2, 0.3]</td><td>either</td><td>0.1</td><td>0.4</td><td></td><td class='note'>约定：(踝y-髋y)/body_scale，图像坐标y向下为正，负值=脚踝高于髋部；掛脚时脚跟通常与髋部齐平或更高，书中未给量化范围，定性推断</td></tr><tr><td>knee_angle</td><td>[40, 150]</td><td>either</td><td>10</td><td>0.3</td><td></td><td class='note'>膝关节弯曲以将脚跟钩挂上方或侧方岩点，定性推断</td></tr><tr><td>heel_leads_toe_x</td><td>[0.15, 1.0]</td><td>either</td><td>0.05</td><td>0.3</td><td></td><td class='note'>脚跟领先脚尖方向表示用脚跟钩点而非脚尖，定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#toe_hook'>toe_hook</a><a href='#side_hook_inner'>side_hook_inner</a><a href='#inverted_hook'>inverted_hook</a></div></div>
+</div>
+
+<div class="card" id="toe_hook" data-cat="吊掛類" data-det="rule_weak" data-kind="posture" data-search="toe_hook 勾腳（toe hook） toe hook 勾脚 吊掛類 2-4-6-(2) p.61">
+  <div class="card-top">
+    <span class="name">勾腳（Toe Hook）</span>
+    <span class="id">toe_hook</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">2-4-6-(2) p.61</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Toe Hook、勾脚</div>
+  <div class="section">用脚背（而非脚尖）掛在岩点及岩壁上的腳法，靠整条腿将脚背往上抬的感觉来拉，腿若弯曲会不好使力，因此腿要伸直、甚至上半身也要倒下才有效。</div>
+  <div class='section'><div class='label'>适用情境</div>常见于水平岩壁或前倾峭壁需要对侧固定身体、防止脚部脱离时使用，双脚同时勾脚又称蝙蝠掛(雙勾腳)。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察是否用脚背(而非脚尖)钩挂在岩点或岩壁边缘，腿多为伸直状态，常见于水平岩壁或前倾峭壁的对侧固定。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>foot_pitch</td><td>[-60, -5]</td><td>either</td><td>5</td><td>0.4</td><td></td><td class='note'>脚背/脚尖上勾（背屈）钩住岩点或岩缘，负值表示脚尖上翘，定性推断</td></tr><tr><td>ankle_rel_hip_y</td><td>[-0.8, 0.6]</td><td>either</td><td>0.1</td><td>0.3</td><td></td><td class='note'>位置比掛脚更贴近身体或位于身侧，定性推断</td></tr><tr><td>knee_angle</td><td>[100, 180]</td><td>either</td><td>10</td><td>0.3</td><td></td><td class='note'>勾脚时腿多为伸直状态，书中提及需伸直甚至上半身倒下才有效，定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#heel_hook'>heel_hook</a><a href='#inverted_hook'>inverted_hook</a></div></div>
+</div>
+
+<div class="card" id="side_hook_inner" data-cat="吊掛類" data-det="vision" data-kind="posture" data-search="side_hook_inner 側掛－內側掛 inside hook 内侧掛 吊掛類 2-4-6-(3)① p.61">
+  <div class="card-top">
+    <span class="name">側掛－內側掛</span>
+    <span class="id">side_hook_inner</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">2-4-6-(3)① p.61</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Inside Hook、内侧掛</div>
+  <div class="section">掛住攀岩鞋内侧来拉的腳法，适用于角落或直条状岩点，大多用来取得身体平衡而非拉近距离；这个腳法光靠掛住的那只脚是不够的，另一只脚必须靠掛住的脚近一点身体才会稳定。</div>
+  <div class='section'><div class='label'>适用情境</div>在角落或直条状岩点旁需要取得身体平衡时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察是否用脚内侧轻轻抵住角落或直条状岩点以取得身体平衡，另一脚需靠近掛住的脚，多用于取得平衡而非拉近距离。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#side_hook_outer'>side_hook_outer</a><a href='#heel_hook'>heel_hook</a></div></div>
+</div>
+
+<div class="card" id="side_hook_outer" data-cat="吊掛類" data-det="vision" data-kind="posture" data-search="side_hook_outer 側掛－外側掛 outside hook 外侧掛 吊掛類 2-4-6-(3)② p.61">
+  <div class="card-top">
+    <span class="name">側掛－外側掛</span>
+    <span class="id">side_hook_outer</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">2-4-6-(3)② p.61</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Outside Hook、外侧掛</div>
+  <div class="section">对斜峭壁上的架状岩点很有效的掛勾腳法，可藉由身体侧面的扭转来撑住躯干，比掛脚更能有效对抗前倾峭壁（掛脚时腰会因下肢结构往下掉）。</div>
+  <div class='section'><div class='label'>适用情境</div>遇到斜峭壁上的架状岩点、需要更强支撑力对抗前倾峭壁时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察是否用脚外侧掛在斜峭壁的架状岩点上，透过身体侧面扭转来撑住躯干，常用于对抗前倾峭壁。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#side_hook_inner'>side_hook_inner</a></div></div>
+</div>
+
+<div class="card" id="inverted_hook" data-cat="吊掛類" data-det="manual" data-kind="posture" data-search="inverted_hook 倒掛型掛勾 inverted hook 倒掛型掛勾 吊掛類 2-4-6-(4) p.62">
+  <div class="card-top">
+    <span class="name">倒掛型掛勾</span>
+    <span class="id">inverted_hook</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge manual">人工标注</span>
+    <span class="badge ref">2-4-6-(4) p.62</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Inverted Hook、倒掛型掛勾</div>
+  <div class="section">在前倾峭壁及水平岩壁上、利用双脚夹住或朝反方向推的腳法总称，包含四种变体：①用脚尖夹（可夹同一岩点或不同岩点）、②上方脚用脚跟、下方脚用脚背夹住较大岩点、③单脚用脚背、另一脚用鞋底透过作用力与反作用力固定（适用位置不同的岩点）、④脚跟与脚尖塞入两岩点间空隙支撑；此腳法会把脚卡住，一旦挥落容易从上半身先落地，须留意安全鬆开。</div>
+  <div class='section'><div class='label'>适用情境</div>前倾峭壁及水平岩壁上岩点具挑战性、需要双脚夹住或反向推撑固定身体时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察双脚是否在前倾峭壁或水平岩壁上以脚尖夹、脚背与脚跟、脚背与鞋底、或脚跟与脚尖等组合夹住/卡住岩点，是较罕见的倒掛型腳法组合，需近距离画面才能分辨具体变体，建议以人工标注为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#heel_hook'>heel_hook</a><a href='#toe_hook'>toe_hook</a></div></div>
+</div>
+<div class='cat-heading' data-cat='手塞'>手塞 <span class='n'>(7)</span></div>
+<div class="card" id="hand_jam" data-cat="手塞" data-det="manual" data-kind="posture" data-search="hand_jam 手掌（hand jam） hand jam 手掌塞 手塞 2-6-1 p.64">
+  <div class="card-top">
+    <span class="name">手掌（Hand Jam）</span>
+    <span class="id">hand_jam</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge manual">人工标注</span>
+    <span class="badge ref">2-6-1 p.64</span>
+    <span class='badge ref'>min_hold 2.0s</span>
+  </div>
+  <div class='aliases'>别名：Hand Jam、手掌塞</div>
+  <div class="section">将拇指根部胖胖的部位（拇指丘）按压在裂隙一侧、手背抵住另一侧壁面以获得左右反作用力的塞手法，是裂隙攀岩最常见宽度的塞法；手太小也可将拇指朝手掌侧弯曲使拇指丘变大。</div>
+  <div class='section'><div class='label'>适用情境</div>用于比手掌厚度稍宽的规则裂隙，双手交替填塞左右前进；有时上方的手也可将小指侧朝上（反手）来前进。</div>
+  <div class='section'><div class='label'>视觉线索</div>手臂没入裂隙中消失，仅露出手腕以上，身体贴近岩缝，双手交替使用；单目摄像头无法看清裂隙内手掌形状，须以人工标注为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#fist_jam'>fist_jam</a><a href='#thin_hand_jam'>thin_hand_jam</a></div></div>
+</div>
+
+<div class="card" id="finger_jam" data-cat="手塞" data-det="manual" data-kind="posture" data-search="finger_jam 手指（finger jam） finger jam 手指塞 pinkie jam 手塞 2-6-2 p.65">
+  <div class="card-top">
+    <span class="name">手指（Finger Jam）</span>
+    <span class="id">finger_jam</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge manual">人工标注</span>
+    <span class="badge ref">2-6-2 p.65</span>
+    <span class='badge ref'>min_hold 2.0s</span>
+  </div>
+  <div class='aliases'>别名：Finger Jam、手指塞、Pinkie Jam</div>
+  <div class="section">手指插入最狭窄裂隙并扭转卡紧的塞法；最窄可用小指塞（Pinkie Jam，把小指第二关节卡进裂隙），将手指深入直到指根则称手指塞，以反手为主，裂隙宽窄不一时以指关节是否碰得到底决定塞法。</div>
+  <div class='section'><div class='label'>适用情境</div>用于最狭窄、只能放入手指的裂隙。</div>
+  <div class='section'><div class='label'>视觉线索</div>只有手指没入裂隙，手掌在外，动作幅度很小，难以从远处影像判断具体塞法，须以人工标注为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#ring_lock'>ring_lock</a></div></div>
+</div>
+
+<div class="card" id="thin_hand_jam" data-cat="手塞" data-det="manual" data-kind="posture" data-search="thin_hand_jam 薄手（thin hand） thin hand 薄手塞 手塞 2-6-3 p.65">
+  <div class="card-top">
+    <span class="name">薄手（Thin Hand）</span>
+    <span class="id">thin_hand_jam</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge manual">人工标注</span>
+    <span class="badge ref">2-6-3 p.65</span>
+    <span class='badge ref'>min_hold 2.0s</span>
+  </div>
+  <div class='aliases'>别名：Thin Hand、薄手塞</div>
+  <div class="section">裂隙宽度不大不小、手指放得下但手掌进不去时使用的塞法，靠弯曲手指或旋转手掌获得支撑力，拇指腹是获得反作用力的关键；理想状态下推进力由塞脚负责，手只负责别让身体脱离岩壁。</div>
+  <div class='section'><div class='label'>适用情境</div>攀登时上侧的手要反手、拇指朝下，下侧的手要正手、拇指朝上，双手以不交叉的方式前进。</div>
+  <div class='section'><div class='label'>视觉线索</div>手部同样没入裂隙至手腕附近，姿势介于手指塞与手掌塞之间，视觉上难以精确区分，须以人工标注为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#hand_jam'>hand_jam</a><a href='#ring_lock'>ring_lock</a></div></div>
+</div>
+
+<div class="card" id="ring_lock" data-cat="手塞" data-det="manual" data-kind="posture" data-search="ring_lock 環扣（ring lock） ring lock 环扣 手塞 2-6-4 p.65">
+  <div class="card-top">
+    <span class="name">環扣（Ring Lock）</span>
+    <span class="id">ring_lock</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge manual">人工标注</span>
+    <span class="badge ref">2-6-4 p.65</span>
+    <span class='badge ref'>min_hold 2.0s</span>
+  </div>
+  <div class='aliases'>别名：Ring Lock、环扣</div>
+  <div class="section">薄手偏宽的裂隙宽度可用的塞法，将食指与中指指腹压在拇指指甲上，每根手指只放到第二关节左右，让手指像岩塞一样边扭转边前进；左右轮流或交叉都有效，也可用来掛在裂隙边缘上。</div>
+  <div class='section'><div class='label'>适用情境</div>裂隙宽度介于薄手偏宽的范围时使用，以当下最顺手的方式攀爬即可。</div>
+  <div class='section'><div class='label'>视觉线索</div>手指整体形成环状插入裂隙，外观特征细微，需近距离特写才可能辨识，须以人工标注为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#finger_jam'>finger_jam</a><a href='#thin_hand_jam'>thin_hand_jam</a></div></div>
+</div>
+
+<div class="card" id="fist_jam" data-cat="手塞" data-det="manual" data-kind="posture" data-search="fist_jam 拳頭（fist jam） fist jam 拳头塞 手塞 2-6-5 p.66">
+  <div class="card-top">
+    <span class="name">拳頭（Fist Jam）</span>
+    <span class="id">fist_jam</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge manual">人工标注</span>
+    <span class="badge ref">2-6-5 p.66</span>
+    <span class='badge ref'>min_hold 2.0s</span>
+  </div>
+  <div class='aliases'>别名：Fist Jam、拳头塞</div>
+  <div class="section">把手握成拳头放入裂隙里卡住的塞法，也可先松握放入再用力握紧，原则上一定要卡住裂隙中最窄的部份；理论上拇指要握在掌心里，但拳头过小时也可将拇指伸出调整宽度。</div>
+  <div class='section'><div class='label'>适用情境</div>用拳头攀爬时，上面的手可以和下面的手一样正手、手背朝上；若下面的手改成反手、手指朝正，撑的时间会更长。</div>
+  <div class='section'><div class='label'>视觉线索</div>手部呈拳头状没入裂隙，仅露出手腕以上，双手可正手或反手组合使用，须以人工标注为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#hand_jam'>hand_jam</a><a href='#stacking'>stacking</a></div></div>
+</div>
+
+<div class="card" id="stacking" data-cat="手塞" data-det="manual" data-kind="posture" data-search="stacking 堆疊（leavittation） leavittation 堆叠塞 手塞 2-6-6 p.66">
+  <div class="card-top">
+    <span class="name">堆疊（Leavittation）</span>
+    <span class="id">stacking</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge manual">人工标注</span>
+    <span class="badge ref">2-6-6 p.66</span>
+    <span class='badge ref'>min_hold 2.0s</span>
+  </div>
+  <div class='aliases'>别名：Leavittation、堆叠塞</div>
+  <div class="section">当裂隙大小超过拳头、只靠单手会松掉时，把双手叠合起来的塞法，可手掌叠手掌、手掌叠拳头、拳头叠拳头；名字取自加州攀岩者Randy Leavitt。</div>
+  <div class='section'><div class='label'>适用情境</div>裂隙宽度超过单手拳头能塞入的范围时，用来固定在一点、将身体往上拉。</div>
+  <div class='section'><div class='label'>视觉线索</div>两只手明显叠放在同一裂隙位置，因无法交替前进，移动主要靠脚，双手长时间停留同一高度，须以人工标注为主。</div>
+  
+  <div class='section'><div class='label'>常见错误</div><ul class='errs'><li>双手叠合固定同一点后无法轮流交替前进，需靠脚法移动身体</li></ul></div>
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#fist_jam'>fist_jam</a><a href='#arm_lock'>arm_lock</a></div></div>
+</div>
+
+<div class="card" id="arm_lock" data-cat="手塞" data-det="manual" data-kind="posture" data-search="arm_lock 單臂鎖定（arm lock） arm lock 单臂锁定 chicken wing arm bar 手塞 2-6-7 p.66">
+  <div class="card-top">
+    <span class="name">單臂鎖定（Arm Lock）</span>
+    <span class="id">arm_lock</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge manual">人工标注</span>
+    <span class="badge ref">2-6-7 p.66</span>
+    <span class='badge ref'>min_hold 1.5s</span>
+  </div>
+  <div class='aliases'>别名：Arm Lock、单臂锁定、Chicken Wing、Arm Bar</div>
+  <div class="section">裂隙不足以让半身塞入时，将手肘弯曲、透过后方肩膀与前方手掌制造反作用力卡住手臂的塞法，姿势像鸡翅因此别名Chicken Wing；另一手反手按住裂隙边缘稳定或用推法把身体往上挪。比这稍窄的裂隙可用单臂伸直（Arm Bar）。</div>
+  <div class='section'><div class='label'>适用情境</div>裂隙比堆疊窄、无法塞入整只手掌或拳头组合时使用，前进须依靠腿的屈伸。</div>
+  <div class='section'><div class='label'>视觉线索</div>单侧手臂弯曲成鸡翅状卡在裂隙内，肩膀贴近岩壁，是较易从画面辨识的姿态，但精确类型仍建议以视觉/人工确认为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#stacking'>stacking</a></div></div>
+</div>
+<div class='cat-heading' data-cat='推拉類'>推拉類 <span class='n'>(2)</span></div>
+<div class="card" id="high_step" data-cat="推拉類" data-det="rule" data-kind="posture" data-search="high_step 高跨步 high step 高跨步 青蛙步 frog step 推拉類 3-4-1 p.93-95">
+  <div class="card-top">
+    <span class="name">高跨步</span>
+    <span class="id">high_step</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule">规则可判</span>
+    <span class="badge ref">3-4-1 p.93-95</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：High Step、高跨步、青蛙步、Frog Step</div>
+  <div class="section">将脚抬高至腰部以上的高处脚点、把身体重心迅速转移到该脚上再伸手抓取下一岩点的推拉类腳法，本质是支点下一点配重型的平衡姿势；双脚内侧踩、身体正对岩壁往上爬又称青蛙步。</div>
+  <div class='section'><div class='label'>适用情境</div>当脚点位于支撑手与下一岩点间的高处、且手无法直接抓到下一岩点时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>一脚明显抬高过腰甚至过肩，膝盖朝下、臀部坐向脚跟，腰部贴壁，重心完全落在这只高脚上后才伸出另一手。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>knee_visibility</td><td>[0.5, 1.5]</td><td></td><td>0</td><td>0</td><td>是</td><td class='note'>硬性前提：膝盖关键点需可见，布尔编码1=可见</td></tr><tr><td>knee_rel_hip_y</td><td>[-1.0, -0.2]</td><td>either</td><td>0.1</td><td>0.5</td><td></td><td class='note'>约定：(膝y-髋y)/body_scale，负值＝膝盖高于髋部；高跨步时膝盖明显高于髋部，书中无量化角度仅描述'脚点在支撑手与下一岩点间的高处'，定性推断</td></tr><tr><td>knee_angle</td><td>[30, 110]</td><td>either</td><td>10</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr><tr><td>hip_angle</td><td>[60, 140]</td><td></td><td>10</td><td>0.2</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  <div class='section'><div class='label'>常见错误</div><ul class='errs'><li>体重尚未完全移到支撑脚上就贸然伸手，会加重支撑手负担</li></ul></div>
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#mantling'>mantling</a><a href='#drop_knee'>drop_knee</a></div></div>
+</div>
+
+<div class="card" id="mantling" data-cat="推拉類" data-det="rule_weak" data-kind="action" data-search="mantling 下壓（mantling） mantling 下压 撑上 推拉類 3-4-4 p.96-99">
+  <div class="card-top">
+    <span class="name">下壓（Mantling）</span>
+    <span class="id">mantling</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-4-4 p.96-99</span>
+    
+  </div>
+  <div class='aliases'>别名：Mantling、下压、撑上</div>
+  <div class="section">从坡度陡峭处爬到平缓或顶端时使用的推拉类腳法，先用双手向上拉将身体拉高到胸口，再一鼓作气转换为向下推撑将身体继续推高，最后把脚掛上岩缘往上爬；动作中段（拉转推的转换）最不易掌握，须靠动作的惯性来克服。</div>
+  <div class='section'><div class='label'>适用情境</div>适用于在巨石顶端附近攀爬，或岩壁像架子一样坡度平缓、前方没有明显岩点必须整个身体往上爬时。</div>
+  <div class='section'><div class='label'>视觉线索</div>先双手拉身体贴近岩缘，随后单手或双手转换成手掌撑地/撑岩的推姿势将身体撑起，最后把脚提上岩架站起，动作中段有明显的拉转推过渡。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>hip_height_change_pre_post</td><td>[0.3, 2.0]</td><td></td><td>0.1</td><td>0.5</td><td></td><td class='note'>下壓过程身体整体高度显著上升，定性推断，待标注数据校准</td></tr><tr><td>elbow_angle</td><td>[140, 180]</td><td>either</td><td>10</td><td>0.3</td><td></td><td class='note'>动作末段手肘打直锁定以撑住身体，定性推断</td></tr><tr><td>segment_duration_s</td><td>[0.5, 4.0]</td><td></td><td>0.5</td><td>0.2</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  <div class='section'><div class='label'>常见错误</div><ul class='errs'><li>身体尚未完全抬高就急着上脚，可能失衡下坠</li></ul></div>
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#high_step'>high_step</a><a href='#upper_push'>upper_push</a></div></div>
+</div>
+<div class='cat-heading' data-cat='攀岩的手順'>攀岩的手順 <span class='n'>(8)</span></div>
+<div class="card" id="alternating_sequence" data-cat="攀岩的手順" data-det="rule" data-kind="action" data-search="alternating_sequence 左右輪流 alternating 左右轮流 攀岩的手順 3-7-1 p.128">
+  <div class="card-top">
+    <span class="name">左右輪流</span>
+    <span class="id">alternating_sequence</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule">规则可判</span>
+    <span class="badge ref">3-7-1 p.128</span>
+    
+  </div>
+  <div class='aliases'>别名：Alternating、左右轮流</div>
+  <div class="section">双手双脚依序、规律地左右交替向上攀爬的基本手顺，是所有路线中使用次数最多、姿势最稳定的手顺；在岩壁坡度平缓且岩点较大的路线上，攀岩者自然会以左右规则交替的方式伸出手脚。</div>
+  <div class='section'><div class='label'>适用情境</div>即便抓点手感不佳，也建议尽量维持左右轮流的手顺以保持平衡，因为跳点须将手臂伸长不好动作，换手要扭转身体容易不稳。</div>
+  <div class='section'><div class='label'>视觉线索</div>连续多个动作中左右手（脚）依序交替支撑与伸出，没有同手连续抓两点（跳点）、没有同点重叠（换手）、也没有交叉动作。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>segment_duration_s</td><td>[0.3, 3.0]</td><td></td><td>0.3</td><td>0.3</td><td></td><td class='note'>仅作片段时长弱约束；核心判定逻辑为比较连续片段的dominant_limb是否左右交替出现（L→R→L→R），需规则引擎在片段序列层面实现，非单条阈值可完全表达，定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#change_hand'>change_hand</a><a href='#bump'>bump</a></div></div>
+</div>
+
+<div class="card" id="bump" data-cat="攀岩的手順" data-det="rule_weak" data-kind="action" data-search="bump 跳點（bump） bump 跳点 攀岩的手順 3-7-2 p.129">
+  <div class="card-top">
+    <span class="name">跳點（Bump）</span>
+    <span class="id">bump</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-7-2 p.129</span>
+    
+  </div>
+  <div class='aliases'>别名：Bump、跳点</div>
+  <div class="section">当眼前岩点不易支撑而下一岩点较佳、或下一岩点方向不佳但用反方向的手抓起来更顺、或岩点间距过近时，用同一只手（或脚）连续抓取两个岩点的手顺，中间岩点被当作中继点。</div>
+  <div class='section'><div class='label'>适用情境</div>眼前岩点不易支撑，下一个较佳岩点又在附近，可把眼前岩点当中继点再跳到下一点；也用于岩点间距过近、直接跳下一手前进更省力时。</div>
+  <div class='section'><div class='label'>视觉线索</div>同一只手（或脚）在很短时间内连续抓取相邻的两个岩点，另一只手保持不动，跳跃幅度不大以确保能抓稳。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>displacement_magnitude</td><td>[0.15, 0.8]</td><td></td><td>0.1</td><td>0.3</td><td></td><td class='note'>跳点通常移动距离较短（中继点到下一点），定性推断，待标注数据校准</td></tr><tr><td>segment_duration_s</td><td>[0.2, 1.5]</td><td></td><td>0.2</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr><tr><td>displacement_direction</td><td>[0, 1]</td><td></td><td>0</td><td>0.4</td><td></td><td class='note'>核心判定逻辑为同一只手/脚在相邻两个片段连续抓取两个岩点（即相邻片段dominant_limb相同），需序列层面比较，此处仅作占位约束，实际判断以规则引擎的片段比较逻辑为主，定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#change_hand'>change_hand</a><a href='#coordination_lunge'>coordination_lunge</a><a href='#continuous_change'>continuous_change</a></div></div>
+</div>
+
+<div class="card" id="change_hand" data-cat="攀岩的手順" data-det="rule_weak" data-kind="action" data-search="change_hand 換手（change） change 换手 piano cup side by side 攀岩的手順 3-7-3 p.130-131">
+  <div class="card-top">
+    <span class="name">換手（Change）</span>
+    <span class="id">change_hand</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-7-3 p.130-131</span>
+    
+  </div>
+  <div class='aliases'>别名：Change、换手、Piano、Cup、Side by Side</div>
+  <div class="section">双手依序抓在同一个岩点上，先手预留空间、后手补上再重新抓稳的手顺，包含钢琴手（Piano，手指依序交叠）、握杯法（Cup，先手包夹岩点两端、后手从上方握住）、换边（Side by Side，突出角落上快速旋转甩到另一侧）等变化型态。</div>
+  <div class='section'><div class='label'>适用情境</div>附近没有好抓的岩点、必须换手才比较好抓，或为了休息、调整手顺而刻意换手时使用；在峭壁或水平岩壁上换手时应避免同时换脚以维持平衡。</div>
+  <div class='section'><div class='label'>视觉线索</div>两只手先后出现在同一个岩点位置、有短暂交叠动作（手指交叉或叠放），随后先手松开、后手重新抓稳。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>hands_gap</td><td>[0, 0.25]</td><td></td><td>0.05</td><td>0.5</td><td></td><td class='note'>换手瞬间双手几乎同时出现在同一岩点，手间距接近0，定性推断，待标注数据校准</td></tr><tr><td>segment_duration_s</td><td>[0.1, 1.0]</td><td></td><td>0.2</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr><tr><td>wrists_crossed</td><td>[-0.5, 0.5]</td><td></td><td>0.1</td><td>0.2</td><td></td><td class='note'>布尔编码0=false；换手通常不交叉（有别于交叉手），定性推断</td></tr></tbody></table></div>
+  <div class='section'><div class='label'>常见错误</div><ul class='errs'><li>未提前为另一手预留抓握空间，导致平衡崩解、难以回到原岩点</li></ul></div>
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#bump'>bump</a><a href='#match'>match</a><a href='#alternating_sequence'>alternating_sequence</a></div></div>
+</div>
+
+<div class="card" id="cross_move" data-cat="攀岩的手順" data-det="rule" data-kind="action" data-search="cross_move 交叉手（cross move） cross move 交叉手 攀岩的手順 3-7-4 p.132-133">
+  <div class="card-top">
+    <span class="name">交叉手（Cross Move）</span>
+    <span class="id">cross_move</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule">规则可判</span>
+    <span class="badge ref">3-7-4 p.132-133</span>
+    
+  </div>
+  <div class='aliases'>别名：Cross Move、交叉手</div>
+  <div class="section">手顺为往横向移动、或斜上方有可换手的岩点但位置很差时使用的技巧型手法，双手在身体前或身体下方交叉抓点，也常搭配调节平衡及高跨步一起使用；从交叉手翻身通常比进入交叉手更困难。</div>
+  <div class='section'><div class='label'>适用情境</div>当手顺为往横向移动、或前进时须连续进行2次较差换手，可用交叉手一次到位。</div>
+  <div class='section'><div class='label'>视觉线索</div>一只手从腋下或身体前方穿过另一只手抓取对侧岩点，双手手腕在画面上呈交叉状，手穿过时会遮住视线因此脚点须事先确认。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>wrist_visibility</td><td>[0.5, 1.5]</td><td></td><td>0</td><td>0</td><td>是</td><td class='note'>硬性前提：双手手腕需可见，布尔编码1=可见</td></tr><tr><td>wrists_crossed</td><td>[0.5, 1.5]</td><td></td><td>0</td><td>0.7</td><td></td><td class='note'>布尔特征编码：0=false,1=true；交叉手时双手手腕在画面上交叉</td></tr><tr><td>displacement_magnitude</td><td>[0.3, 1.2]</td><td></td><td>0.2</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#crossover'>crossover</a></div></div>
+</div>
+
+<div class="card" id="crossover" data-cat="攀岩的手順" data-det="rule" data-kind="action" data-search="crossover 交叉式（crossover） crossover 交叉式 攀岩的手順 3-7-5 p.134">
+  <div class="card-top">
+    <span class="name">交叉式（Crossover）</span>
+    <span class="id">crossover</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule">规则可判</span>
+    <span class="badge ref">3-7-5 p.134</span>
+    
+  </div>
+  <div class='aliases'>别名：Crossover、交叉式</div>
+  <div class="section">朝远方做交叉手时，拉取手抓住容易支撑的岩点、抓取手从肩膀处伸往下一个远处岩点，大幅拉近与远处岩点距离的交叉手法，比一般交叉手移动距离更远；支撑手比起用手臂拉，更重要的是腋下要夹紧。</div>
+  <div class='section'><div class='label'>适用情境</div>抓取手的目标岩点位于支撑手反方向的远处时使用，动作要迅速，腋下需夹紧以稳住躯干。</div>
+  <div class='section'><div class='label'>视觉线索</div>双手交叉幅度比一般交叉手更大，抓取手需大幅伸展几乎到极限，躯干随支撑手旋转、腰部扭转作为动力来源。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>wrists_crossed</td><td>[0.5, 1.5]</td><td></td><td>0</td><td>0.5</td><td></td><td class='note'>与交叉手相同的交叉判定，布尔编码1=true</td></tr><tr><td>displacement_magnitude</td><td>[1.0, 3.0]</td><td></td><td>0.2</td><td>0.5</td><td></td><td class='note'>交叉式用于拉近与远处岩点的距离，位移显著大于一般交叉手，定性推断，待标注数据校准</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#cross_move'>cross_move</a><a href='#layback'>layback</a></div></div>
+</div>
+
+<div class="card" id="match" data-cat="攀岩的手順" data-det="rule" data-kind="posture" data-search="match 同點（match） match 同点 攀岩的手順 3-7-6 p.134">
+  <div class="card-top">
+    <span class="name">同點（Match）</span>
+    <span class="id">match</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule">规则可判</span>
+    <span class="badge ref">3-7-6 p.134</span>
+    <span class='badge ref'>min_hold 0.5s</span>
+  </div>
+  <div class='aliases'>别名：Match、同点</div>
+  <div class="section">当路线中怎么都无法用单手支撑某岩点、而下一岩点又很远时，放弃单手支撑、将另一手尽可能重叠上来同抓一点以防止力气流失的手顺；同点要能支撑到抓取下一个岩点前。</div>
+  <div class='section'><div class='label'>适用情境</div>需要在同一岩点上用双手稳住姿势、支撑到抓取下一个岩点之前使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>两只手同时重叠或紧靠抓在同一个岩点上，双手间距趋近于零，通常伴随双脚也需要靠拢或腰部下沉来维持平衡。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>wrist_visibility</td><td>[0.5, 1.5]</td><td></td><td>0</td><td>0</td><td>是</td><td class='note'>硬性前提：双手手腕需可见，布尔编码1=可见</td></tr><tr><td>hands_gap</td><td>[0, 0.15]</td><td></td><td>0.05</td><td>0.8</td><td></td><td class='note'>同点指双手重叠抓在同一岩点，间距趋近于0，定性推断，待标注数据校准</td></tr><tr><td>segment_duration_s</td><td>[0.1, 1.5]</td><td></td><td>0.2</td><td>0.2</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#change_hand'>change_hand</a><a href='#regrip'>regrip</a></div></div>
+</div>
+
+<div class="card" id="regrip" data-cat="攀岩的手順" data-det="vision" data-kind="action" data-search="regrip 重抓 regrip 重抓 攀岩的手順 3-7-7 p.135">
+  <div class="card-top">
+    <span class="name">重抓</span>
+    <span class="id">regrip</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">3-7-7 p.135</span>
+    
+  </div>
+  <div class='aliases'>别名：Regrip、重抓</div>
+  <div class="section">在同一个岩点上改变同一只手的抓法（例如从上面推改为向上拉、或从正手转为反手）以增加移动距离的实用小技巧，与换手不同（换手是换成另一只手）。</div>
+  <div class='section'><div class='label'>适用情境</div>抓着岩点将身体往上拉时，若抓点角度改变导致抓不稳，或根据身体高度换个抓法效果更好时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>同一只手停留在同一岩点上，但手掌与手腕的角度、朝向在攀爬过程中发生变化（如从下方抓握转为上方推压），需要清楚看到手掌与岩点的接触方式才能判断，建议以视觉判读为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#match'>match</a></div></div>
+</div>
+
+<div class="card" id="continuous_change" data-cat="攀岩的手順" data-det="manual" data-kind="action" data-search="continuous_change 連續換手 continuous change 连续换手 攀岩的手順 3-7-8 p.135">
+  <div class="card-top">
+    <span class="name">連續換手</span>
+    <span class="id">continuous_change</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge manual">人工标注</span>
+    <span class="badge ref">3-7-8 p.135</span>
+    
+  </div>
+  <div class='aliases'>别名：Continuous Change、连续换手</div>
+  <div class="section">想要在3个岩点间搭配手顺、连续进行换手计算时使用的综合手顺规划，例如「左手抓②→右手交叉手抓③→左手下降到④→右手下降到②→左手抓③→右手抓⑤」这类多步骤组合。</div>
+  <div class='section'><div class='label'>适用情境</div>当需要精算多个岩点间的最佳手部顺序、单一手顺（跳点/换手/交叉）不足以描述整段动作时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>这是由多个基础手顺（换手、交叉手、重抓等）组合而成的策略性序列，本身不是单一可辨识的视觉动作，需综合观察一整段连续画面、甚至配合已识别出的其他手顺片段才能标注，建议以人工标注为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#bump'>bump</a><a href='#change_hand'>change_hand</a><a href='#cross_move'>cross_move</a></div></div>
+</div>
+<div class='cat-heading' data-cat='腳塞'>腳塞 <span class='n'>(3)</span></div>
+<div class="card" id="foot_jam" data-cat="腳塞" data-det="manual" data-kind="posture" data-search="foot_jam 腳塞 foot jam 脚塞 腳塞 2-7-1 p.67">
+  <div class="card-top">
+    <span class="name">腳塞</span>
+    <span class="id">foot_jam</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge manual">人工标注</span>
+    <span class="badge ref">2-7-1 p.67</span>
+    <span class='badge ref'>min_hold 2.0s</span>
+  </div>
+  <div class='aliases'>别名：Foot Jam、脚塞</div>
+  <div class="section">将小脚趾那侧向下放入裂隙、接着朝内侧旋转把脚卡死以获得支撑力的基本腳塞法；裂隙过窄攀岩鞋塞不下时，可在裂隙周围寻找能顶或摩的脚点，若裂隙很宽（可爬烟囱的程度）则改用鞋跟与鞋尖横放卡住攀爬。</div>
+  <div class='section'><div class='label'>适用情境</div>攀爬裂隙时腳的推力比手强，是裂隙攀岩的基础技巧；腳塞是把脚硬挤进岩缝，脚会痛，穿大一号的鞋子会轻松一点。</div>
+  <div class='section'><div class='label'>视觉线索</div>脚整只没入裂隙并旋转卡住，从外部只能看到小腿以上，具体卡入角度不可见，须以人工标注为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#t_stack'>t_stack</a></div></div>
+</div>
+
+<div class="card" id="t_stack" data-cat="腳塞" data-det="manual" data-kind="posture" data-search="t_stack t字腳（t stack） t stack t字脚 腳塞 2-7-2 p.67">
+  <div class="card-top">
+    <span class="name">T字腳（T Stack）</span>
+    <span class="id">t_stack</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge manual">人工标注</span>
+    <span class="badge ref">2-7-2 p.67</span>
+    <span class='badge ref'>min_hold 1.5s</span>
+  </div>
+  <div class='aliases'>别名：T Stack、T字脚</div>
+  <div class="section">当脚横放入裂隙也无法固定时，用T字腳的塞法：把腳摆成T字形，一只脚摆直、另一只脚摆横，前后抵住裂隙；这种塞法无法让脚交互向上，须趁手撑住的瞬间将脚往上缩。</div>
+  <div class='section'><div class='label'>适用情境</div>裂隙宽度使单脚横放仍不稳定时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>双脚呈丁字交叠状卡在裂隙中，具体卡入结构在裂隙内部不可见，须以人工标注为主。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#foot_jam'>foot_jam</a><a href='#back_and_foot'>back_and_foot</a></div></div>
+</div>
+
+<div class="card" id="back_and_foot" data-cat="腳塞" data-det="vision" data-kind="posture" data-search="back_and_foot 背與腳（back &amp;amp; foot） back &amp; foot 背与脚 烟囱式 chimney 腳塞 2-7-3 p.67">
+  <div class="card-top">
+    <span class="name">背與腳（Back &amp; Foot）</span>
+    <span class="id">back_and_foot</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">2-7-3 p.67</span>
+    <span class='badge ref'>min_hold 2.0s</span>
+  </div>
+  <div class='aliases'>别名：Back &amp; Foot、背与脚、烟囱式、Chimney</div>
+  <div class="section">当裂隙大到身体能轻松进入（烟囱地形）时使用的腳法，全身进入裂隙内，利用身体各部位（背部与双脚）前后抵住两侧岩壁；手撑在这种大小的裂隙上虽不太消耗体力，却也无法采取防护措施。</div>
+  <div class='section'><div class='label'>适用情境</div>用于宽度足以让身体进入的烟囱型地形。</div>
+  <div class='section'><div class='label'>视觉线索</div>整个身体撑在两片相对岩壁之间，背部与双脚分别抵住不同侧岩壁，躯干在外部清晰可见，是腳塞类技巧中少数能从外部摄影机判断整体姿态的技巧。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#t_stack'>t_stack</a><a href='#stemming'>stemming</a></div></div>
+</div>
+<div class='cat-heading' data-cat='腳法基礎'>腳法基礎 <span class='n'>(9)</span></div>
+<div class="card" id="edging" data-cat="腳法基礎" data-det="vision" data-kind="posture" data-search="edging 頂（edging） edging 顶 踩边缘 腳法基礎 2-3-1 p.47">
+  <div class="card-top">
+    <span class="name">頂（Edging）</span>
+    <span class="id">edging</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">2-3-1 p.47</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Edging、顶、踩边缘</div>
+  <div class="section">用攀岩鞋的鞋缘（尤其靠近鞋尖的窄边）卡在细小岩点或岩缘上，靠鞋底硬度支撑体重的踩法，与摩相对，是软硬两种鞋底特性权衡下的踩法之一。</div>
+  <div class='section'><div class='label'>适用情境</div>适用于小型岩点、岩板、岩阶等狭窄边缘；岩缘愈小，愈需要一开始就精准踩在最佳位置。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察脚是否用鞋尖/鞋缘的窄边接触岩点，脚跟略上提，脚背与小腿呈现较陡的角度，常见于极小岩点或岩阶。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#smearing'>smearing</a><a href='#smedging'>smedging</a></div></div>
+</div>
+
+<div class="card" id="smearing" data-cat="腳法基礎" data-det="vision" data-kind="posture" data-search="smearing 摩（smearing） smearing 摩 摩擦踩法 腳法基礎 2-3-2 p.48-49">
+  <div class="card-top">
+    <span class="name">摩（Smearing）</span>
+    <span class="id">smearing</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">2-3-2 p.48-49</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Smearing、摩、摩擦踩法</div>
+  <div class="section">把鞋底用力按压在岩壁或岩点上，靠鞋子与岩壁间的最大静摩擦力支撑身体的踩法，与顶相对；书中提到磨砂过的攀岩墙与鞋底最大静摩擦系数约为1.4倍。</div>
+  <div class='section'><div class='label'>适用情境</div>适用于没有明显岩点、需要靠鞋底摩擦力才能站稳的光滑或缓坡壁面。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察脚掌是否大面积平贴在光滑无明显岩点的壁面上，靠鞋底摩擦力支撑，脚踝角度较平、脚跟不特别上提。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#edging'>edging</a><a href='#smedging'>smedging</a></div></div>
+</div>
+
+<div class="card" id="smedging" data-cat="腳法基礎" data-det="vision" data-kind="posture" data-search="smedging 蹭（smedging） smedging 蹭 顶摩混合 腳法基礎 2-3-3 p.50-51">
+  <div class="card-top">
+    <span class="name">蹭（Smedging）</span>
+    <span class="id">smedging</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">2-3-3 p.50-51</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Smedging、蹭、顶摩混合</div>
+  <div class="section">结合顶与摩两种要素的踩法，将脚沿壁面边摩擦边旋转，卡在岩点的角落，让重量集中在岩点棱角处以增加支撑力。</div>
+  <div class='section'><div class='label'>适用情境</div>当脚点相较鞋子显得狭窄但又突出时使用，可取代单纯的顶或单纯的摩。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察脚是否贴着壁面边旋转边下滑後卡在岩点棱角上，兼具顶与摩两种特征，常见于狭窄但突出的脚点。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#edging'>edging</a><a href='#smearing'>smearing</a></div></div>
+</div>
+
+<div class="card" id="front_edge" data-cat="腳法基礎" data-det="vision" data-kind="posture" data-search="front_edge 正踩（front edge） front edge 正踩 内正踩 外正踩 腳法基礎 2-4-1 p.52-53">
+  <div class="card-top">
+    <span class="name">正踩（Front Edge）</span>
+    <span class="id">front_edge</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">2-4-1 p.52-53</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Front Edge、正踩、内正踩、外正踩</div>
+  <div class="section">只用攀岩鞋前端靠近鞋尖的侧边踩极小岩点的踩法，分为以内侧踩的内正踩、以外侧踩的外正踩，注意力应放在鞋缘而非单一脚趾上；脚趾弯曲能缩短出力距离、获得更强支撑力。</div>
+  <div class='section'><div class='label'>适用情境</div>路线难度愈高、岩点愈小时愈常使用，是踩极小岩点时的首选。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察脚是否用靠近鞋尖的侧边(内侧为内正踩、外侧为外正踩)踩在极小岩点上，注意力应在鞋缘而非单一脚趾。</div>
+  
+  <div class='section'><div class='label'>常见错误</div><ul class='errs'><li>把注意力放在每根脚趾而非鞋缘，导致触感不够敏锐</li></ul></div>
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#inside_edge'>inside_edge</a><a href='#outside_edge'>outside_edge</a></div></div>
+</div>
+
+<div class="card" id="inside_edge" data-cat="腳法基礎" data-det="vision" data-kind="posture" data-search="inside_edge 內側踩（inside edge） inside edge 内侧踩 腳法基礎 2-4-2 p.54-55">
+  <div class="card-top">
+    <span class="name">內側踩（Inside Edge）</span>
+    <span class="id">inside_edge</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">2-4-2 p.54-55</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Inside Edge、内侧踩</div>
+  <div class="section">将鞋子内侧的拇指球（拇指根部）重叠在岩点最好施力的位置上踩踏的踩法，是最好使力的踩法之一，拇指球是足部最容易承重的位置。</div>
+  <div class='section'><div class='label'>适用情境</div>配合往上爬时把脚跟提起、膝盖向下压的动作，让体重确实落在脚上。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察脚是否用拇指球(大拇指根部)重叠踩在岩点上，脚跟能自然上提、膝盖向下压。</div>
+  
+  <div class='section'><div class='label'>常见错误</div><ul class='errs'><li>踩点偏向脚跟侧，落在足弓上容易打滑</li><li>用脚尖踩导致脚跟下坠，体重无法确实落在脚上</li></ul></div>
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#front_edge'>front_edge</a><a href='#outside_edge'>outside_edge</a></div></div>
+</div>
+
+<div class="card" id="outside_edge" data-cat="腳法基礎" data-det="vision" data-kind="posture" data-search="outside_edge 外側踩（outside edge） outside edge 外侧踩 腳法基礎 2-4-3 p.56">
+  <div class="card-top">
+    <span class="name">外側踩（Outside Edge）</span>
+    <span class="id">outside_edge</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">2-4-3 p.56</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Outside Edge、外侧踩</div>
+  <div class="section">踩在与拇指球对侧的小指球上的踩法，透过小指侧收缩脚趾获得支撑力；当髋关节柔软度不够、无法用内侧踩贴壁时特别有效，因为外侧踩时腰部更容易贴近墙面。</div>
+  <div class='section'><div class='label'>适用情境</div>岩点较小、且腳想要使力时使用，常见于调节平衡与小幅度垂膝式。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察脚是否用与拇指球对侧的小指球一带踩在岩点上，常见于调节平衡或垂膝式的甩腿脚。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#inside_edge'>inside_edge</a><a href='#front_edge'>front_edge</a></div></div>
+</div>
+
+<div class="card" id="back_step" data-cat="腳法基礎" data-det="vision" data-kind="posture" data-search="back_step 側踩（back step） back step 侧踩 腳法基礎 2-4-4 p.57">
+  <div class="card-top">
+    <span class="name">側踩（Back Step）</span>
+    <span class="id">back_step</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">2-4-4 p.57</span>
+    <span class='badge ref'>min_hold 0.8s</span>
+  </div>
+  <div class='aliases'>别名：Back Step、侧踩</div>
+  <div class="section">由作用力与反作用力构成、双脚成对踩在岩点上的踩法，移动时脚会落在背后不易看见的位置，需事先仔细确认脚点。</div>
+  <div class='section'><div class='label'>适用情境</div>身体需要侧向背对岩壁移动、双脚呈对踩状态时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察双脚是否成对踩在岩点上、其中一脚在背后不易看见的位置，身体呈明显侧向背对姿态。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#outside_edge'>outside_edge</a></div></div>
+</div>
+
+<div class="card" id="toe_pocket" data-cat="腳法基礎" data-det="vision" data-kind="posture" data-search="toe_pocket 扣（pocket） pocket 扣 指洞踩法 腳法基礎 2-4-5 p.57">
+  <div class="card-top">
+    <span class="name">扣（Pocket）</span>
+    <span class="id">toe_pocket</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge vision">视觉判定</span>
+    <span class="badge ref">2-4-5 p.57</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Pocket、扣、指洞踩法</div>
+  <div class="section">用鞋尖（指尖）勾扣或挤塞进指洞状岩点的踩法；指洞小则用鞋尖直接勾住，指洞较大则须用挤塞方式将鞋子扭进去卡紧，也可直接踩在指洞上方。</div>
+  <div class='section'><div class='label'>适用情境</div>遇到指洞型态的岩点、且无法直接踩在上面时使用。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察脚尖是否伸入指洞状的凹陷岩点中，若指洞较大则脚会以挤塞方式扭入卡紧，或直接踩在指洞上方。</div>
+  
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#front_edge'>front_edge</a></div></div>
+</div>
+
+<div class="card" id="foot_change" data-cat="腳法基礎" data-det="rule_weak" data-kind="action" data-search="foot_change 換腳 foot swap 换脚 腳法基礎 2-4-7 p.63">
+  <div class="card-top">
+    <span class="name">換腳</span>
+    <span class="id">foot_change</span>
+    <span class="badge action">动态动作</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">2-4-7 p.63</span>
+    
+  </div>
+  <div class='aliases'>别名：Foot Swap、换脚</div>
+  <div class="section">在同一个脚点位置上，用第二只脚踩上后再把原本的脚抽离的换脚技巧，如同敲敲乐积木一样先补上再抽离；换脚时双手须尽量张开抓在较远的位置以维持平衡。</div>
+  <div class='section'><div class='label'>适用情境</div>攀岩比想象中更需要频繁换脚，因为能踩的地方通常只有唯一的脚点。</div>
+  <div class='section'><div class='label'>视觉线索</div>观察同一个脚点位置上是否先后由两脚交替出现(如同敲敲乐积木)，双手在此过程中会张开撑住岩点、重心维持在中间。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>displacement_magnitude</td><td>[0, 0.12]</td><td></td><td>0.05</td><td>0.6</td><td></td><td class='note'>换脚时脚点位置几乎不变（同一岩点），位移量应接近0，定性推断，待标注数据校准</td></tr><tr><td>hip_height_change_pre_post</td><td>[-0.08, 0.08]</td><td></td><td>0.05</td><td>0.4</td><td></td><td class='note'>换脚过程中髋部高度变化很小，定性推断</td></tr></tbody></table></div>
+  <div class='section'><div class='label'>常见错误</div><ul class='errs'><li>下面的脚抽离动作太慢，可能连同上面的脚一起踩空跌落</li></ul></div>
+  
+</div>
+<div class='cat-heading' data-cat='調節平衡類'>調節平衡類 <span class='n'>(5)</span></div>
+<div class="card" id="inner_diagonal" data-cat="調節平衡類" data-det="rule_weak" data-kind="posture" data-search="inner_diagonal 內對角 inner diagonal 内对角 調節平衡類 3-2-4 p.76">
+  <div class="card-top">
+    <span class="name">內對角</span>
+    <span class="id">inner_diagonal</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-2-4 p.76</span>
+    <span class='badge ref'>min_hold 0.8s</span>
+  </div>
+  <div class='aliases'>别名：Inner Diagonal、内对角</div>
+  <div class="section">调节平衡中使用率最高的基础手法：支撑手与踩稳脚呈对角分布（脚点靠近支撑手正下方一侧），透过对角支撑达到左右平衡，另一脚以掛旗法甩腿维持稳定。</div>
+  <div class='section'><div class='label'>适用情境</div>当脚点位于支撑手与下一岩点之间、距离较近时使用；从斜岩板到垂直壁、前倾峭壁皆适用，垂直壁上约有50%机率使用这项技巧。</div>
+  <div class='section'><div class='label'>视觉线索</div>支撑手与踩稳的脚呈对角分布，另一脚以掛旗法甩出维持平衡，身体大致正对岩壁，需要区分内对角（脚点近）与外对角（脚点远）。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>ankle_cross_midline</td><td>[-0.3, 0.3]</td><td>either</td><td>0.1</td><td>0.3</td><td></td><td class='note'>内对角脚点离支撑手较近，脚踝相对身体中线偏移较小，定性推断，待标注数据校准</td></tr><tr><td>torso_lean</td><td>[-15, 15]</td><td></td><td>5</td><td>0.3</td><td></td><td class='note'>内对角时身体较贴墙，偏转角小，定性推断</td></tr><tr><td>hip_angle</td><td>[140, 180]</td><td></td><td>10</td><td>0.4</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#outer_diagonal'>outer_diagonal</a><a href='#inner_flag'>inner_flag</a></div></div>
+</div>
+
+<div class="card" id="outer_diagonal" data-cat="調節平衡類" data-det="rule_weak" data-kind="posture" data-search="outer_diagonal 外對角 outer diagonal 外对角 調節平衡類 3-2-5 p.78">
+  <div class="card-top">
+    <span class="name">外對角</span>
+    <span class="id">outer_diagonal</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-2-5 p.78</span>
+    <span class='badge ref'>min_hold 0.8s</span>
+  </div>
+  <div class='aliases'>别名：Outer Diagonal、外对角</div>
+  <div class="section">与内对角方向相反的对角支撑手法，脚点位于支撑手与下一岩点的反方向、距离较远时使用；在调节平衡中是最优秀的掛旗式脚法之一，攀爬前倾峭壁必用。</div>
+  <div class='section'><div class='label'>适用情境</div>脚点比支撑点离下一个岩点更远时使用，从垂直壁到斜峭壁都能应用。</div>
+  <div class='section'><div class='label'>视觉线索</div>支撑手与踩稳脚呈对角，身体略向内缩，另一脚往反方向大幅甩腿掛旗。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>ankle_cross_midline</td><td>[0.3, 1.2]</td><td>either</td><td>0.1</td><td>0.4</td><td></td><td class='note'>外对角脚点离支撑手较远，脚踝偏移量较大，定性推断，待标注数据校准</td></tr><tr><td>torso_lean</td><td>[15, 45]</td><td></td><td>5</td><td>0.3</td><td></td><td class='note'>外对角常伴随身体较大幅度侧倾，定性推断</td></tr><tr><td>hip_angle</td><td>[140, 190]</td><td></td><td>10</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#inner_diagonal'>inner_diagonal</a><a href='#outer_flag'>outer_flag</a></div></div>
+</div>
+
+<div class="card" id="inner_flag" data-cat="調節平衡類" data-det="rule_weak" data-kind="posture" data-search="inner_flag 內側掛旗法 inside flag 内侧掛旗法 調節平衡類 3-2-7 p.80-81">
+  <div class="card-top">
+    <span class="name">內側掛旗法</span>
+    <span class="id">inner_flag</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-2-7 p.80-81</span>
+    <span class='badge ref'>min_hold 1.0s</span>
+  </div>
+  <div class='aliases'>别名：Inside Flag、内侧掛旗法</div>
+  <div class="section">支撑手与脚点平行支撑在同一侧时，将另一腳甩入身体与岩壁之间（绕过身前呈交叉状）以取得调节平衡，不必换脚就能让身体很稳定。</div>
+  <div class='section'><div class='label'>适用情境</div>当脚点位于支撑手与下一岩点的反方向、且手脚在同一侧（平行支撑）时使用，可避免频繁换脚；对愈小的脚点愈有效。</div>
+  <div class='section'><div class='label'>视觉线索</div>甩出的那条腿绕过身体前方与踩稳脚呈交叉状，腰部旋转配合甩腿动作，从肩膀往上抬而非用手硬拉。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>ankle_cross_midline</td><td>[-1.2, -0.2]</td><td>either</td><td>0.1</td><td>0.4</td><td></td><td class='note'>内侧掛旗脚绕至身体内侧越过中线，定性推断；正负号约定：正值＝脚踝在支撑脚外侧，负值＝越过中线至内侧</td></tr><tr><td>feet_spread</td><td>[0.6, 1.5]</td><td></td><td>0.1</td><td>0.3</td><td></td><td class='note'>甩腿掛旗时双脚间距明显增大，定性推断</td></tr><tr><td>hip_angle</td><td>[150, 200]</td><td></td><td>10</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#outer_flag'>outer_flag</a><a href='#inner_diagonal'>inner_diagonal</a></div></div>
+</div>
+
+<div class="card" id="outer_flag" data-cat="調節平衡類" data-det="rule_weak" data-kind="posture" data-search="outer_flag 外側掛旗法 outside flag 外侧掛旗法 調節平衡類 3-2-8 p.82-84">
+  <div class="card-top">
+    <span class="name">外側掛旗法</span>
+    <span class="id">outer_flag</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-2-8 p.82-84</span>
+    <span class='badge ref'>min_hold 2.0s</span>
+  </div>
+  <div class='aliases'>别名：Outside Flag、外侧掛旗法</div>
+  <div class="section">与内侧掛旗法方向相反，将甩出的腿绕过踩稳脚外侧形成交叉，同样不必换脚即可取得平衡；短距离移动时只需简单微调甩腿即可应对，深度甩腿时还可作为休息姿势、双手轮流放松。</div>
+  <div class='section'><div class='label'>适用情境</div>当脚点位于支撑手与下一岩点的反方向、且手脚在同一侧（平行支撑）时使用；也可在深度掛旗状态下把腰大幅沉下来休息。</div>
+  <div class='section'><div class='label'>视觉线索</div>甩出的那条腿绕到踩稳脚外侧形成交叉，腰部可大幅下沉，是常见的攀岩中场休息姿势之一，手打直放松、交替抓取两个岩点。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>ankle_cross_midline</td><td>[0.2, 1.2]</td><td>either</td><td>0.1</td><td>0.4</td><td></td><td class='note'>外侧掛旗脚甩至支撑脚外侧、未过中线，定性推断</td></tr><tr><td>feet_spread</td><td>[0.5, 1.5]</td><td></td><td>0.1</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr><tr><td>hip_angle</td><td>[140, 190]</td><td></td><td>10</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#inner_flag'>inner_flag</a><a href='#outer_diagonal'>outer_diagonal</a><a href='#swing_by'>swing_by</a></div></div>
+</div>
+
+<div class="card" id="bow_balance" data-cat="調節平衡類" data-det="rule_weak" data-kind="posture" data-search="bow_balance 弓身平衡 bow balance 弓身平衡 調節平衡類 3-2-9 p.85">
+  <div class="card-top">
+    <span class="name">弓身平衡</span>
+    <span class="id">bow_balance</span>
+    <span class="badge posture">静态姿势</span>
+    <span class="badge rule_weak">规则弱（需视觉确认）</span>
+    <span class="badge ref">3-2-9 p.85</span>
+    <span class='badge ref'>min_hold 0.8s</span>
+  </div>
+  <div class='aliases'>别名：Bow Balance、弓身平衡</div>
+  <div class="section">身体像弓一样后仰、透过全身重量分配取得平衡的手法，用于处理近距离岩点的调节平衡，记得以平衡分配为优先，支撑手不需用力抓握。</div>
+  <div class='section'><div class='label'>适用情境</div>在坡度不大、接近垂直壁的前倾壁上，若下一岩点就在附近、不需甩腿配重也能使用；壁面或岩石上有障碍物无法透过甩腿维持平衡时也很有效。</div>
+  <div class='section'><div class='label'>视觉线索</div>上半身明显向后仰呈弓形，双脚并拢站立配重，眼睛只需瞄准目标而非死盯，头部肌肉不紧绷。</div>
+  <div class='section'><div class='label'>Pose Rules</div><table class='rules-table'><thead><tr><th>feature</th><th>range</th><th>side</th><th>soft</th><th>weight</th><th>gate</th><th>note</th></tr></thead><tbody><tr><td>torso_lean</td><td>[20, 60]</td><td></td><td>10</td><td>0.5</td><td></td><td class='note'>弓身平衡时上半身后仰幅度较大，定性推断，待标注数据校准</td></tr><tr><td>hip_angle</td><td>[160, 200]</td><td></td><td>10</td><td>0.3</td><td></td><td class='note'>定性推断</td></tr><tr><td>feet_spread</td><td>[0, 0.4]</td><td></td><td>0.1</td><td>0.2</td><td></td><td class='note'>双脚并拢站立配重，定性推断</td></tr></tbody></table></div>
+  
+  <div class='section'><div class='label'>易混淆</div><div class='confusable'><a href='#inner_diagonal'>inner_diagonal</a></div></div>
+</div>
+
+<div class="empty-hint" id="empty-hint" style="display:none">没有匹配的动作</div>
+</main>
+<script>
+const search = document.getElementById('search');
+const cards = Array.from(document.querySelectorAll('.card'));
+const state = { cat: '__all__', det: '__all__', kind: '__all__', q: '' };
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const group = chip.dataset.group;
+    document.querySelectorAll('.chip[data-group="' + group + '"]').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    state[group] = chip.dataset.val;
+    applyFilter();
+  });
+});
+search.addEventListener('input', () => { state.q = search.value.trim().toLowerCase(); applyFilter(); });
+
+function applyFilter() {
+  let visible = 0;
+  cards.forEach(card => {
+    const matchCat = state.cat === '__all__' || card.dataset.cat === state.cat;
+    const matchDet = state.det === '__all__' || card.dataset.det === state.det;
+    const matchKind = state.kind === '__all__' || card.dataset.kind === state.kind;
+    const matchQ = !state.q || card.dataset.search.includes(state.q);
+    const show = matchCat && matchDet && matchKind && matchQ;
+    card.classList.toggle('dim', !show);
+    if (show) visible++;
+  });
+  document.querySelectorAll('.cat-heading').forEach(h => {
+    const cat = h.dataset.cat;
+    const anyVisible = cards.some(c => c.dataset.cat === cat && !c.classList.contains('dim'));
+    h.style.display = anyVisible ? '' : 'none';
+  });
+  document.getElementById('empty-hint').style.display = visible === 0 ? '' : 'none';
+}
+
+document.querySelectorAll('.confusable a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.getElementById(a.getAttribute('href').slice(1));
+    if (target) {
+      document.querySelectorAll('.chip[data-group="cat"]').forEach(c => c.classList.remove('active'));
+      document.querySelector('.chip[data-group="cat"][data-val="__all__"]').classList.add('active');
+      document.querySelectorAll('.chip[data-group="det"]').forEach(c => c.classList.remove('active'));
+      document.querySelector('.chip[data-group="det"][data-val="__all__"]').classList.add('active');
+      document.querySelectorAll('.chip[data-group="kind"]').forEach(c => c.classList.remove('active'));
+      document.querySelector('.chip[data-group="kind"][data-val="__all__"]').classList.add('active');
+      state.cat = '__all__'; state.det = '__all__'; state.kind = '__all__';
+      applyFilter();
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.style.outline = '2px solid var(--accent)';
+      setTimeout(() => target.style.outline = '', 1500);
+    }
+  });
+});
+</script>
+</body>
+</html>
