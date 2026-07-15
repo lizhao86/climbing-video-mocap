@@ -14,3 +14,6 @@ __pycache__/
 */report_assets/
 cases/keyframes/*.jpg
 cases/keyframes/*.png
+
+# 教材页图（版权物+可由 kb_extract_pages.py 重新生成）
+knowledge_base/book_pages/

@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
-"""把 knowledge_base/moves.json 渲染成可浏览的单文件 HTML（moves_viewer.html）。
+"""把 knowledge_base/moves.json 渲染成可浏览的 HTML（moves_viewer.html）。
 用法：python3 knowledge_base/kb_render.py
+教材页图来自 book_pages/（由 kb_extract_pages.py 生成，缺图时卡片不显示图区）。
 """
 import json
+import re
 from pathlib import Path
 
 HERE = Path(__file__).parent
 MOVES_JSON = HERE / "moves.json"
 OUT_HTML = HERE / "moves_viewer.html"
+PAGES_DIR = HERE / "book_pages"
+PAGE_RE = re.compile(r"p\.?\s*(\d+)(?:\s*[-–]\s*(\d+))?")
 
 DETECT_LABEL = {
     "rule": "规则可判",
@@ -115,6 +119,21 @@ TEMPLATE = """<!doctype html>
   }}
   .confusable a:hover {{ border-color: var(--accent); }}
   .empty-hint {{ color: var(--muted); text-align: center; padding: 40px 0; }}
+  .book-pages {{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }}
+  .book-pages figure {{ margin: 0; text-align: center; }}
+  .book-pages img {{
+    height: 150px; width: auto; border: 1px solid var(--border); border-radius: 8px;
+    cursor: zoom-in; display: block; background: #fff;
+  }}
+  .book-pages figcaption {{ color: var(--muted); font-size: 11px; margin-top: 2px; }}
+  #lightbox {{
+    display: none; position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,.82); cursor: zoom-out;
+    align-items: center; justify-content: center; flex-direction: column; gap: 8px;
+  }}
+  #lightbox.open {{ display: flex; }}
+  #lightbox img {{ max-width: 94vw; max-height: 90vh; border-radius: 6px; background: #fff; }}
+  #lightbox .cap {{ color: #ddd; font-size: 13px; }}
 </style>
 </head>
 <body>
@@ -137,6 +156,21 @@ TEMPLATE = """<!doctype html>
 {body}
 <div class="empty-hint" id="empty-hint" style="display:none">没有匹配的动作</div>
 </main>
+<div id="lightbox"><img alt=""><div class="cap"></div></div>
+<script>
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = lightbox.querySelector('img');
+const lightboxCap = lightbox.querySelector('.cap');
+document.querySelectorAll('.book-pages img').forEach(img => {{
+  img.addEventListener('click', () => {{
+    lightboxImg.src = img.src;
+    lightboxCap.textContent = img.dataset.cap || '';
+    lightbox.classList.add('open');
+  }});
+}});
+lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
+document.addEventListener('keydown', e => {{ if (e.key === 'Escape') lightbox.classList.remove('open'); }});
+</script>
 <script>
 const search = document.getElementById('search');
 const cards = Array.from(document.querySelectorAll('.card'));
@@ -206,6 +240,35 @@ def esc(s):
         .replace("<", "&lt;")
         .replace(">", "&gt;")
         .replace('"', "&quot;")
+    )
+
+
+def pages_from_ref(ref):
+    pages = set()
+    for lo, hi in PAGE_RE.findall(ref or ""):
+        lo = int(lo)
+        hi = int(hi) if hi else lo
+        pages.update(range(lo, hi + 1))
+    return sorted(pages)
+
+
+def render_book_pages(m):
+    figs = []
+    for p in pages_from_ref(m.get("book_ref", "")):
+        img = PAGES_DIR / f"p{p:03d}.jpg"
+        if not img.exists():
+            continue
+        cap = f"{m.get('name_zh','')} · 教材 p.{p}"
+        figs.append(
+            f"<figure><img src='book_pages/{img.name}' loading='lazy' "
+            f"data-cap='{esc(cap)}' alt='教材 p.{p}'>"
+            f"<figcaption>p.{p}</figcaption></figure>"
+        )
+    if not figs:
+        return ""
+    return (
+        "<div class='section'><div class='label'>教材页</div>"
+        "<div class='book-pages'>" + "".join(figs) + "</div></div>"
     )
 
 
@@ -280,6 +343,7 @@ def render_card(m):
   <div class="section">{desc}</div>
   {"<div class='section'><div class='label'>适用情境</div>" + when + "</div>" if when else ""}
   {"<div class='section'><div class='label'>视觉线索</div>" + cues + "</div>" if cues else ""}
+  {render_book_pages(m)}
   {render_rules_table(m.get("pose_rules"))}
   {errs_html}
   {confusable_html}
