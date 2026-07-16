@@ -490,18 +490,19 @@ def main():
     pmed = v2["prep"]["median_s"]
     plim = pmed * v2["params"]["PREP_CRUX_K"]
     BW, BH = 1200, 190
-    BL, BR, BT, BB = 46, 10, 12, 40
+    BL, BR, BT, BB = 58, 10, 12, 40   # BL 留宽一点，装得下左侧的参考线标签
     pmax = max([p["prep_s"] for p in preps] + [plim]) * 1.12 if preps else 1
     bars = ""
     if preps:
-        # 参考线先画，柱子和数值标签后画——反过来会让虚线横穿标签，读不清
-        for val, c_, lab in [(pmed, C_REST, f"中位数 {pmed:.2f}s"),
-                             (plim, C_STUCK, f"难点线 ×{v2['params']['PREP_CRUX_K']} = {plim:.2f}s")]:
+        # 参考线先画，柱子和数值标签后画——反过来会让虚线横穿标签，读不清。
+        # 标签放**左侧留白**（BL 那条 gutter）而不是右侧：右侧会和最后几根柱子的数值标签
+        # 抢位置（IMG_6152 实测 23s 那根的「0.9」直接压在「中位数 0.60s」上）。
+        for val, c_, lab in [(pmed, C_REST, "中位"), (plim, C_STUCK, "难点线")]:
             y = BH - BB - val / pmax * (BH - BT - BB)
             bars += (f'<line x1="{BL}" y1="{y:.1f}" x2="{BW-BR}" y2="{y:.1f}" stroke="{c_}" '
                      f'stroke-width="1" stroke-dasharray="4 4" opacity="0.75"/>'
-                     f'<text x="{BW-BR}" y="{y-5:.1f}" fill="{c_}" font-size="10" '
-                     f'text-anchor="end" font-family="Space Mono, monospace">{lab}</text>')
+                     f'<text x="{BL-6}" y="{y+3.5:.1f}" fill="{c_}" font-size="10" '
+                     f'text-anchor="end">{lab}</text>')
         n = len(preps)
         slot = (BW - BL - BR) / n
         bw = min(slot * 0.62, 54)
@@ -514,9 +515,11 @@ def main():
             lab_fill = "#e9ecf1" if over else "#6b7280"
             bars += (f'<rect x="{cx-bw/2:.1f}" y="{BH-BB-h:.1f}" width="{bw:.1f}" '
                      f'height="{h:.1f}" fill="{fill}"{op}/>'
+                     # 描边光晕：矮柱的数值标签会正好落在中位线上，没有底衬就被虚线穿过
                      f'<text x="{cx:.1f}" y="{BH-BB-h-6:.1f}" fill="{lab_fill}" '
-                     f'font-size="11" text-anchor="middle" font-family="Space Mono, monospace">'
-                     f'{p["prep_s"]:.1f}</text>'
+                     f'font-size="11" text-anchor="middle" font-family="Space Mono, monospace" '
+                     f'paint-order="stroke" stroke="#14161b" stroke-width="3" '
+                     f'stroke-linejoin="round">{p["prep_s"]:.1f}</text>'
                      f'<text x="{cx:.1f}" y="{BH-BB+15:.1f}" fill="#6b7280" font-size="10" '
                      f'text-anchor="middle" font-family="Space Mono, monospace">{p["move_start_s"]:.0f}s</text>'
                      f'<text x="{cx:.1f}" y="{BH-BB+28:.1f}" fill="#6b7280" font-size="10" '
@@ -609,7 +612,7 @@ def main():
                   "有较多横移和试探，目标动作前先读线可以减少折返。"))
     arm, leg = v1["left_arm_usage_pct"], v1["left_leg_usage_pct"]
     imb = max(abs(arm - 50), abs(leg - 50))
-    if imb >= 12:
+    if imb >= 10:   # 阈值 12 会漏掉 IMG_6152 的 61/39（偏差 11）——那已经是 1.6 倍差距了
         w_ = "手" if abs(arm - 50) >= abs(leg - 50) else "脚"
         p_ = arm if w_ == "手" else leg
         takes.append(f"<b>{w_}上偏{'左' if p_ > 50 else '右'}（{p_}%）。</b>"
@@ -835,8 +838,9 @@ td.empty{{color:var(--ink3)}}
 
   <h2>每次出手前，你停了多久<span class="cnt">中位数 {pmed:.2f}s · 最长 {v2['prep']['max_s']:.2f}s</span></h2>
   <div class="tlbox">{prep_svg}</div>
-  <p class="note">每根柱=一次出手前的停顿。超过<b>难点线</b>（中位数 ×{v2['params']['PREP_CRUX_K']}）
-  的记为「卡住型 · 犹豫」难点。柱下标注出手时刻与主导肢体。</p>
+  <p class="note">每根柱=一次出手前的停顿，柱下标注出手时刻与主导肢体。绿线=中位数
+  {pmed:.2f}s，青线=<b>难点线</b>（中位数 ×{v2['params']['PREP_CRUX_K']} = {plim:.2f}s），
+  超过即记为「卡住型 · 犹豫」难点。</p>
 
   <h2>时间去哪了<span class="cnt">起攀 → 完攀 共 {C['climb_time_s']:.1f}s</span></h2>
   <div class="tlbox">{split_svg}</div>
