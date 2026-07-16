@@ -23,6 +23,25 @@
 - 知识库动作分类沿用教材体系（5 大移动类 + 手顺 4 类），动作中文名用书中译名，记 `book_ref` 页码。
 - **教材 PDF 页码换算：PDF 文件页 = 书本印刷页 + 2**（封面+版权页无编号，2026-07-15 实测校验）。book_ref 记的是印刷页。
 - mediapipe 必须用 **0.10.14**（≥0.10.2x 移除了 `mp.solutions` 旧 API，v1 脚本会挂）。
+- **Windows 上跑流水线的三条铁律（2026-07-16 首次在 Windows 跑通，逐条实测）**：
+  1. **venv 必须建在纯 ASCII 路径**（本机 `C:\venvs\climb310`，Python 3.10）。项目路径含
+     「我的代码」，mediapipe 无法从非 ASCII 路径加载模型，报 `FileNotFoundError:
+     pose_landmark_cpu.binarypb`（文件其实存在）。项目代码留在原地没关系，只有 mediapipe
+     包所在路径必须 ASCII。
+  2. **跑 climb_pose.py 必须设 `CLIMB_ROTATE=0`**。OpenCV 在 Windows（FFmpeg 后端）默认
+     自动应用旋转元数据（`CAP_PROP_ORIENTATION_AUTO=1`，4.10/5.0 都是），而脚本按 Mac
+     行为（AVFoundation 后端不自动转）写了自己的手动转正 → **画面被转两次，人是躺着的**。
+     后果极隐蔽：**检出率仍 100%**，但「重心高度」量的是水平方向，41s 的爬升会被算成
+     2.6s 完攀。降 opencv 版本无用（4.10 也自动转）。数字荒谬时先怀疑上游数据方向。
+  3. **设 `PYTHONUTF8=1 PYTHONIOENCODING=utf-8`**。v1 脚本的 `open(...,"w")` 没指定
+     encoding，Windows 默认 GBK 写不了报告卡里的 `▸`；print 的 emoji 同理撞控制台 GBK。
+  标准前缀：`PYTHONUTF8=1 PYTHONIOENCODING=utf-8 CLIMB_MAX_W=960 CLIMB_ROTATE=0
+  /c/venvs/climb310/Scripts/python.exe climb_pose.py <视频> <输出目录>`
+- **验证素材的隐性要求（S3 踩坑总结）**：① 全程不能有路人从镜头前走过——MediaPipe Pose
+  只跟一个人，会跟错（IMG_6947 的 13-16s 就是，检出率 98% 掩盖了这个问题）；
+  ② 攀岩者不能爬出画面（IMG_6947 30s 后只剩腿在框内，重心用残缺骨架算）；
+  ③ 视频开头若含「走向岩壁」，起攀判定需靠上墙门（见 PLAN.md §8），因为人在深度方向
+  移动会被透视误判成爬升。**IMG_6942 是目前唯一干净的素材。**
 - **MediaPipe 左右标签**：多数时候正确（IMG_6952 实测 12/15 段），但扭身/遮挡时会**整臂/整腿认错人**，且无启发式能可靠识别错误段（全局镜像互换、几何 x 判定、肩朝向、骨架链距离四种方案 2026-07-16 均实测否决——全局互换会把对的弄反）。定案：**标签默认可信 + 老板核对的错误段走 `annotations/<base>_side_overrides.json` 人工覆写**（source=manual），深度扭身段自动标 `side_confidence=low`。首尾 0.25s 速度有平滑边缘伪影，`climb_segments.py` 已钳制。
 - moves.json 改动后跑 `kb_lint.py` 校验 + `kb_render.py` 重新生成 viewer。
 

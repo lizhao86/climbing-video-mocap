@@ -17,11 +17,22 @@ import cv2
 from PIL import Image, ImageDraw, ImageFont
 
 FONT_CANDIDATES = [
+    # macOS
     "/System/Library/Fonts/PingFang.ttc",
     "/System/Library/Fonts/Hiragino Sans GB.ttc",
     "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+    # Windows（2026-07-16 补：原来只有 Mac 路径，next() 在 Windows 上直接 StopIteration）
+    "C:/Windows/Fonts/msyh.ttc",      # 微软雅黑
+    "C:/Windows/Fonts/simhei.ttf",    # 黑体
+    "C:/Windows/Fonts/simsun.ttc",    # 宋体
+    # Linux
+    "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
 ]
-FONT = next(p for p in FONT_CANDIDATES if os.path.exists(p))
+FONT = next((p for p in FONT_CANDIDATES if os.path.exists(p)), None)
+if FONT is None:
+    sys.exit("找不到中文字体，请把可用字体路径加进 FONT_CANDIDATES：\n  " +
+             "\n  ".join(FONT_CANDIDATES))
 C_MOVE = (255, 216, 168)    # 橙（RGB）
 C_STAT = (222, 226, 230)    # 灰
 C_MOVE_D = (232, 89, 12)    # 深橙（时间轴）

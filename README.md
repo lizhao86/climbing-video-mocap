@@ -7,7 +7,11 @@
 - **v1 流水线**：可用。`climb_pose.py`（视频→骨架 CSV）+ `climb_analyze_report.py`（CSV→HTML 报告卡）。
 - **S1 动作知识库**：已完成。从教材《攀岩技術教本詳細圖解》（東秀磯）提炼 54 个动作，含分类/可判性/骨架规则/视觉线索/教材页码。
 - **S2 全身动作分段**：已完成。`climb_segments.py` 锚点位移法——手/脚末端净位移 ≥0.5 身长判"真换点"，输出 move/static 段 + 肢体换点事件两层；`climb_segments_review.py` 生成烧字幕审阅视频供人眼验收。IMG_6952 人眼零漏检，IMG_6424 零改参泛化通过。
-- S3-S10（节奏统计、规则匹配、视觉判定、标注回流、报告 v2）：待做。
+- **S3 节奏统计报告 v2a**：已实现，待老板验收。`climb_report_v2.py` 出「攀岩节奏报告卡.html」
+  + `metrics_v2.json`，六项指标：完成时间 / 切换耗时 / 难点 / 三段占比(move·rest·adjust) /
+  弯臂耗力 / 休息点质量。IMG_6942 抽帧自验证通过（19-24s 的"卡住"由弯臂+反复出手+长停顿
+  三信号互证）。三项待拍板见 [PLAN.md](PLAN.md) 看板。
+- S4-S10（规则匹配、视觉判定、标注回流、报告 v2b）：待做。
 - 历史两条视频（IMG_6424/6952）的分析产物已清理出工作区（2026-07-16）：均可由原视频一键重建，CSV 亦存于 git 历史（`git checkout 14b701f -- <path>` 可取回）。
 
 ## 怎么用
@@ -17,12 +21,28 @@
 ```bash
 pip install mediapipe==0.10.14 opencv-python numpy matplotlib pillow
 python3 climb_pose.py <视频路径> <输出目录>            # 视频 → 骨架 CSV
-python3 climb_analyze_report.py <输出目录>             # v1 HTML 报告卡
-python3 climb_segments.py <输出目录>/<base>_pose2d.csv  # S2 分段+换点事件
-python3 climb_segments_review.py <视频路径> <输出目录>/<base>_segments.json  # 审阅视频
+python3 climb_analyze_report.py --dir <输出目录>/数据 --base <base> \
+    --annotated <输出目录>/数据/<base>_annotated.mp4 --out <输出目录>   # v1 HTML 报告卡
+python3 climb_segments.py <输出目录>/数据/<base>_pose2d.csv             # S2 分段+换点事件
+python3 climb_report_v2.py --dir <输出目录>/数据 --base <base> --out <输出目录>  # S3 节奏报告卡 v2a
+python3 climb_segments_review.py <视频路径> <输出目录>/数据/<base>_segments.json  # 审阅视频
 ```
 
 注意 mediapipe 要 0.10.14（≥0.10.2x 移除了 `mp.solutions` 旧 API，脚本会报错）。
+
+**Windows 上必须加环境变量**（Mac 不用；三条铁律的来龙去脉见 [CLAUDE.md](CLAUDE.md)）：
+
+```bash
+# venv 必须在纯 ASCII 路径（mediapipe 无法从含中文的路径加载模型）
+py -3.10 -m venv C:/venvs/climb310
+export PYTHONUTF8=1 PYTHONIOENCODING=utf-8   # v1 脚本写文件没指定编码，Windows 默认 GBK 会挂
+export CLIMB_MAX_W=960 CLIMB_ROTATE=0        # ★CLIMB_ROTATE=0 必须加：OpenCV 在 Windows 会
+                                             #  自动转正，脚本再转一次→人躺着，检出率仍 100%
+                                             #  但重心高度量的是水平方向，结果全错
+```
+
+**验证素材要求**：全程不能有路人从镜头前走过（MediaPipe 只跟一个人，会跟错）、
+攀岩者不能爬出画面。视频开头含「走向岩壁」没关系，v2a 有上墙门会自动排除。
 审阅视频里左右肢标错的段：在 `annotations/<base>_side_overrides.json` 写
 `[{"t": 秒, "limb": "左手", "note": "..."}]` 后重跑 climb_segments.py 即回流。
 
@@ -46,6 +66,7 @@ kb_extract_pages.py。
 | `PLAN.md` | 总计划 + S1-S10 进度看板（唯一计划真相） |
 | `climb_pose.py` / `climb_analyze_report.py` | v1 流水线（冻结不改） |
 | `climb_segments.py` / `climb_segments_review.py` | S2 分段+换点事件 / 审阅视频生成 |
+| `climb_report_v2.py` | S3 节奏统计报告 v2a（阈值旋钮集中在文件顶部） |
 | `knowledge_base/` | moves.json + lint/render/extract 脚本 + viewer |
 | `annotations/` | 老板人工左右覆写 JSON（不可再生资产，入 git） |
 | `cases/` | 标注案例库（S6 起启用） |
