@@ -20,14 +20,31 @@
 
 ### 分析一条新视频（v1 报告卡 + S2 分段）
 
+**素材库结构（2026-07-17 定稿）：一条线一个文件夹，原片和分析产物放在一起。**
+
+```
+素材/IMG_6942/
+├── IMG_6942.MOV              原片
+├── 攀岩动作报告卡.html         v1 报告卡
+├── 攀岩节奏报告卡.html         v2a 节奏报告卡  ← 从这看
+├── 数据/                     3 份 CSV + metrics.json + metrics_v2.json + segments.json
+├── report_assets/            v1 图表 + crux 截图
+├── report_assets_v2/         v2a 图表
+└── 标注视频/                  骨架标注视频 + 分段审阅视频
+```
+
+分析一条新线（把 `<片名>.MOV` 放进 `素材/<片名>/` 后，四条命令一路到底）：
+
 ```bash
 pip install mediapipe==0.10.14 opencv-python numpy matplotlib pillow
-python3 climb_pose.py <视频路径> <输出目录>            # 视频 → 骨架 CSV
-python3 climb_analyze_report.py --dir <输出目录>/数据 --base <base> \
-    --annotated <输出目录>/数据/<base>_annotated.mp4 --out <输出目录>   # v1 HTML 报告卡
-python3 climb_segments.py <输出目录>/数据/<base>_pose2d.csv             # S2 分段+换点事件
-python3 climb_report_v2.py --dir <输出目录>/数据 --base <base> --out <输出目录>  # S3 节奏报告卡 v2a
-python3 climb_segments_review.py <视频路径> <输出目录>/数据/<base>_segments.json  # 审阅视频
+V=IMG_6942; D=素材/$V                                  # 改这一行即可换片
+python3 climb_pose.py "$D/$V.MOV" "$D/数据"                                    # 视频 → 骨架 CSV
+python3 climb_analyze_report.py --dir "$D/数据" --base $V \
+    --annotated "$D/数据/${V}_annotated.mp4" --out "$D"                        # v1 报告卡
+python3 climb_segments.py "$D/数据/${V}_pose2d.csv"                            # S2 分段+换点事件
+python3 climb_report_v2.py --dir "$D/数据" --base $V --out "$D"                # S3 节奏报告卡 v2a
+python3 climb_segments_review.py "$D/$V.MOV" "$D/数据/${V}_segments.json" \
+    --out "$D/标注视频/${V}_segments_review.mp4"                                # 审阅视频
 ```
 
 注意 mediapipe 要 0.10.14（≥0.10.2x 移除了 `mp.solutions` 旧 API，脚本会报错）。
@@ -45,8 +62,7 @@ export CLIMB_MAX_W=960 CLIMB_ROTATE=0        # ★CLIMB_ROTATE=0 必须加：Ope
 
 **验证素材要求**：全程不能有路人从镜头前走过（MediaPipe 只跟一个人，会跟错，而且检出率
 不会掉、发现不了）、攀岩者不能爬出画面。视频开头含「走向岩壁」没关系，v2a 有上墙门会自动
-排除。当前素材：`testing video/IMG_6942.MOV`（41s，含走近段）、`IMG_6152.MOV`（31s，
-一上来就在墙上）。
+排除。当前素材：`素材/IMG_6942/`（41s，含走近段）、`素材/IMG_6152/`（31s，一上来就在墙上）。
 审阅视频里左右肢标错的段：在 `annotations/<base>_side_overrides.json` 写
 `[{"t": 秒, "limb": "左手", "note": "..."}]` 后重跑 climb_segments.py 即回流。
 
@@ -68,6 +84,7 @@ kb_extract_pages.py。
 | 路径 | 内容 |
 |---|---|
 | `PLAN.md` | 总计划 + S1-S10 进度看板（唯一计划真相） |
+| `素材/<片名>/` | 一条线一个文件夹：原片 + 报告卡 + 数据 + 图表 + 标注视频（不入 git） |
 | `climb_pose.py` / `climb_analyze_report.py` | v1 流水线（冻结不改） |
 | `climb_segments.py` / `climb_segments_review.py` | S2 分段+换点事件 / 审阅视频生成 |
 | `climb_report_v2.py` | S3 节奏统计报告 v2a（阈值旋钮集中在文件顶部） |
