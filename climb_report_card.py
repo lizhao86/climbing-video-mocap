@@ -241,42 +241,62 @@ def main():
         v1_knee = np.nanmin(np.vstack([A_["left_knee"], A_["right_knee"]]), axis=0)
         v1_elbow = np.nanmin(np.vstack([A_["left_elbow"], A_["right_elbow"]]), axis=0)
     v1_terms = {
-        "重心急停急起": (v1_acc_mag - np.nanmean(v1_acc_mag)) / (np.nanstd(v1_acc_mag) + 1e-6),
-        "肢体挥动最快": (v1_allspeed - np.nanmean(v1_allspeed)) / (np.nanstd(v1_allspeed) + 1e-6),
-        "膝屈曲最深": (120 - v1_knee) / 40,
-        "肘屈曲最深": (120 - v1_elbow) / 40,
+        "重心变向最急": (v1_acc_mag - np.nanmean(v1_acc_mag)) / (np.nanstd(v1_acc_mag) + 1e-6),
+        "手脚挥得最快": (v1_allspeed - np.nanmean(v1_allspeed)) / (np.nanstd(v1_allspeed) + 1e-6),
+        "膝盖弯得最深": (120 - v1_knee) / 40,
+        "手肘弯得最深": (120 - v1_elbow) / 40,
     }
+    # 每个主导项对应的「原始量 + 该量的极端方向」，用来生成和标签一致的依据。
+    # ⚠️ 曾经标签报四肢速度、依据却报重心速度，两个不同的量——老板：「你提到挥动最快，
+    # 但你没提到速度」。一张卡只说一件事：哪一项最极端 + 那一项的实际值 + 它有多极端。
+    LIMB_ZH = {"left_wrist": "左手", "right_wrist": "右手",
+               "left_ankle": "左脚", "right_ankle": "右脚"}
+    limb_spd = {k: limb_speed(k) for k in LIMB_ZH}
+
+    def pct_rank(arr, val, high_is_extreme):
+        """该值在全片中有多极端，返回「前 X%」的 X。"""
+        a = arr[~np.isnan(arr)]
+        if not len(a):
+            return None
+        frac = np.mean(a > val) if high_is_extreme else np.mean(a < val)
+        return max(1, round(frac * 100))
 
     def power_detail(ts):
-        """描述**图上这一帧**的姿态 + 它在 v1 公式里到底是哪一项撑起来的。
-        ⚠️ 曾经用 ±3 帧窗口取极值，结果数字描述的不是图上那一刻——老板一眼看出
-        「图里两手都伸直了，凭什么说肘屈到 92°」：92° 来自 3 帧之前，抓的那帧其实是 112°。
-        数字必须和读者眼睛看到的画面一致，这里只取该帧。"""
+        """报出**图上这一帧**里最极端的那一项，以及它在全片中的位置。
+        ⚠️ 数字只取该帧，不做 ±3 帧取极值——老板一眼看出「图里两手都伸直了，凭什么说
+        肘屈到 92°」：那 92° 来自 3 帧之前。数字必须描述读者看到的那一帧。"""
         i = idx_at(ts)
-        with warnings_ignore():
-            kn_l, kn_r = Ag["left_knee"][i], Ag["right_knee"][i]
-            eb_l, eb_r = Ag["left_elbow"][i], Ag["right_elbow"][i]
-            kn = float(np.nanmin([kn_l, kn_r]))
-            eb = float(np.nanmin([eb_l, eb_r]))
-            sp = float(com_spd[i])
-        bits = []
-        if not np.isnan(kn) and kn < 100:
-            bits.append(f"{'左' if kn_l < kn_r else '右'}膝屈到 {kn:.0f}°")
-        if not np.isnan(eb) and eb < 100:
-            bits.append(f"{'左' if eb_l < eb_r else '右'}肘屈到 {eb:.0f}°")
-        if sp > 1.2:
-            bits.append(f"重心 {sp:.1f} 身长/秒")
         vals = {k: float(v[i]) for k, v in v1_terms.items()}
         dom = max(vals, key=lambda k: vals[k])
-        share = vals[dom] / sum(v for v in vals.values() if v > 0) if sum(
-            v for v in vals.values() if v > 0) > 0 else 0
-        return ("、".join(bits) if bits else "无明显极端姿态"), dom, share
+        with warnings_ignore():
+            if dom == "膝盖弯得最深":
+                l_, r_ = Ag["left_knee"][i], Ag["right_knee"][i]
+                a = float(np.nanmin([l_, r_]))
+                if np.isnan(a):
+                    return dom, "看不清（膝盖被挡住）"
+                p = pct_rank(v1_knee, a, False)
+                return dom, f"{'左' if l_ < r_ else '右'}膝弯到 {a:.0f}°，全片最弯的 {p}%"
+            if dom == "手肘弯得最深":
+                l_, r_ = Ag["left_elbow"][i], Ag["right_elbow"][i]
+                a = float(np.nanmin([l_, r_]))
+                if np.isnan(a):
+                    return dom, "看不清（手臂被挡住）"
+                p = pct_rank(v1_elbow, a, False)
+                return dom, f"{'左' if l_ < r_ else '右'}肘弯到 {a:.0f}°，全片最弯的 {p}%"
+            if dom == "手脚挥得最快":
+                which = max(LIMB_ZH, key=lambda k: limb_spd[k][i])
+                v_ = float(limb_spd[which][i])
+                p = pct_rank(v1_allspeed, v_, True)
+                return dom, f"{LIMB_ZH[which]}挥到 {v_:.1f} 身长/秒，全片最快的 {p}%"
+            v_ = float(v1_acc_mag[i])
+            p = pct_rank(v1_acc_mag, v_, True)
+            return dom, f"重心猛地变向，全片最急的 {p}%"
 
     # ── 抽帧：每个难点一张动作特写 ─────────────────────────────
     crux = v2["crux"]["items"]
     for c in crux:
         if c["source"] == "v1":
-            c["detail"], c["driver"], c["share"] = power_detail(c["t"])
+            c["driver"], c["detail"] = power_detail(c["t"])
     ctimes = [c["t"] for c in crux]
     cfiles = grab_frames(A.video, ctimes, [bbox_at(x) for x in ctimes], ASSET, "crux")
     for c, fn in zip(crux, cfiles):
@@ -465,8 +485,8 @@ def main():
             tag = "卡住型 · " + {"hesitation": "犹豫", "repeat": "反复试探"}[c["kind"]]
         else:
             # 不再叫「发力型 · 动作剧烈」——见上方 v1_terms 的拆解注释。
-            # 报出这一刻在 v1 公式里究竟是哪一项撑起来的，让读者自己判断值不值得看。
-            tag = f'{c["driver"]}（占 {c["share"]*100:.0f}%）'
+            # 也去掉了「占 X%」：那是公式内部的分量占比，对读者是黑话（老板看不懂）。
+            tag = c["driver"]
         img = (f'<img src="报告卡素材/{c["img"]}" alt="" loading="lazy">' if c.get("img")
                else '<div class="ph">[抽帧失败]</div>')
         return f'''<figure class="crux {cls}">{img}<figcaption>
@@ -796,9 +816,10 @@ td.empty{{color:var(--ink3)}}
   <div class="cruxes big">{stuck_cards}</div>
 
   <h2>姿态最极端的瞬间<span class="cnt">{len(power)} 处 · 仅供参考</span></h2>
-  <p class="sub">这是 v1 的「吃力点」，但<b>它测的是关节弯曲，不是用力</b>。
-  膝盖弯得深不一定费力，也可能只是踩得舒服。每张卡标了它是哪一项撑起来的，
-  值不值得看你自己定。</p>
+  <p class="sub">全片关节弯得最深、或者动作最急的几个瞬间。每张卡写了哪一项最极端、
+  数值多少、在全片排第几。<br>
+  <b>但极端不等于费力。</b>膝盖弯得深，也可能只是踩得舒服。所以这里只摆事实，不下结论。
+  上面那组「卡住的地方」才是明确要改的。</p>
   <div class="cruxes small">{power_cards}</div>
 
   <h2>省力<span class="cnt">弯臂 {v2['bent_arm']['n']} 段 · 真休息 {v2['rests']['n']} 次</span></h2>
