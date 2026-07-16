@@ -18,7 +18,8 @@
 - `<base>_recognition.json` 是动作序列的唯一真相文件，rule/vision/manual 三种来源逐级覆写，每段必须带 `source` + `confidence`。
 - 长度/速度统一用 `body_scale`（肩中-髋中距中位数）归一化，与 v1 口径一致。
 - 大文件（视频/PDF/report_assets 图）不入 git，见 .gitignore。
-- 验证素材固定用 `IMG_6952_攀岩动作分析/数据/` 下的 CSV。
+- **验证素材（2026-07-16 更新）**：历史两条视频（IMG_6424/6952）的目录已整体清出工作区（老板决定：均可由视频重建，不留副本）。旧 CSV 在 git 历史中，`git checkout 14b701f -- "IMG_6952_攀岩动作分析/数据/IMG_6952_pose2d.csv"` 可取回。S3 起的验证素材=老板届时提供的新视频，用 v1 流水线现跑；`annotations/` 的人工覆写与旧视频绑定，新视频需重新核对。
+- 教材 PDF 线下保管（另一台机器），不在本机工作区；kb_extract_pages.py 需要时先放回根目录。
 - 知识库动作分类沿用教材体系（5 大移动类 + 手顺 4 类），动作中文名用书中译名，记 `book_ref` 页码。
 - **教材 PDF 页码换算：PDF 文件页 = 书本印刷页 + 2**（封面+版权页无编号，2026-07-15 实测校验）。book_ref 记的是印刷页。
 - mediapipe 必须用 **0.10.14**（≥0.10.2x 移除了 `mp.solutions` 旧 API，v1 脚本会挂）。
@@ -29,14 +30,16 @@
 
 ```
 climb_pose.py / climb_analyze_report.py   v1 流水线（勿动）
+climb_segments.py                          S2 分段+换点事件（锚点位移法，参数旋钮在顶部）
+climb_segments_review.py                   审阅视频生成（老板验收用，烧字幕）
 PLAN.md                                    总计划 + 进度看板
-攀岩技術教本詳細圖解_*.pdf                  知识库素材（東秀磯，161页）
 knowledge_base/                            moves.json + lint/render/extract 脚本 + moves_viewer.html（S1 产出）
-cases/                                     标注案例库（跨视频累积）
-annotations/                               老板导出的标注 JSON 收纳
-IMG_6424_攀岩动作分析/ IMG_6952_攀岩动作分析/  已有两条视频的 v1 分析结果
+cases/                                     标注案例库（跨视频累积，S6 起）
+annotations/                               人工左右覆写 JSON（不可再生，入 git）
 _skill_stage/ned-climbing-analysis/        skill 暂存区（S10 收编时同步）
 FreeMoCap_import/ FreeMoCap-Mac使用指南.md  多机位 3D 方案资料（与本计划无关）
+
+（教材 PDF 线下保管；历史视频分析目录 2026-07-16 已清出，见「验证素材」条款）
 ```
 
 ## 汇报口吻
