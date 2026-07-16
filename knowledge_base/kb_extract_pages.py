@@ -14,7 +14,12 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).parent
-PDF = HERE.parent / "攀岩技術教本詳細圖解_抓撐轉跳我就是蜘蛛人.pdf"
+PDF_NAME = "攀岩技術教本詳細圖解_抓撐轉跳我就是蜘蛛人.pdf"
+# 两个位置都找：knowledge_base/ 里（老板 2026-07-17 放的位置，紧挨着它喂养的知识库，
+# 更合理）和项目根目录（本脚本原先唯一认的位置）。只认根目录时，PDF 放在 knowledge_base/
+# 会直接报"找不到"。
+PDF = next((p for p in (HERE / PDF_NAME, HERE.parent / PDF_NAME) if p.exists()),
+           HERE / PDF_NAME)
 MOVES_JSON = HERE / "moves.json"
 OUT_DIR = HERE / "book_pages"
 DPI = 110
@@ -34,7 +39,7 @@ def pages_from_ref(ref: str) -> list[int]:
 
 def main():
     if not PDF.exists():
-        sys.exit(f"❌ 找不到教材 PDF：{PDF}")
+        sys.exit(f"❌ 找不到教材 PDF。放到 {HERE / PDF_NAME} 或 {HERE.parent / PDF_NAME} 任一处即可。")
     moves = json.loads(MOVES_JSON.read_text(encoding="utf-8"))
     all_pages = sorted({p for m in moves for p in pages_from_ref(m["book_ref"])})
     OUT_DIR.mkdir(exist_ok=True)
