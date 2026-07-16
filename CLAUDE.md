@@ -15,6 +15,16 @@
 ## 硬约定
 
 - `climb_pose.py`、`climb_analyze_report.py`（v1 流水线）**不要改**——保证历史视频结果可比。新能力全部走新文件。
+- **指标与展示分层**（2026-07-17 定）：`climb_analyze_report.py` / `climb_segments.py` /
+  `climb_report_v2.py` 各自只产出 `*.json`（metrics.json / segments.json / metrics_v2.json），
+  它们是**产出契约**；`climb_report_card.py` 是唯一的展示层，读 json 出唯一那张
+  「攀岩报告卡.html」。**改样式不碰指标，改指标不碰样式。** 老板 2026-07-17：
+  「报告卡干嘛不合并」——v1/v2a 是开发阶段代号，不该漏到用户面前。
+- **写图不能用 `cv2.imwrite`**：Windows 上遇到非 ASCII 路径**静默失败**（返回 False、
+  不抛异常、不留文件；本项目路径含「我的代码」「素材」，必中）。v1 的
+  climb_analyze_report.py 就栽在这——它的 5 张 crux 截图从来没落盘，报告卡里一直是裂图。
+  用 `cv2.imencode` + Python `open(...,'wb')`，并检查返回值。**注意 `cv2.VideoCapture`
+  读非 ASCII 路径是正常的**（走 FFmpeg 后端），只有 imwrite/imread 有这个坑。
 - `<base>_recognition.json` 是动作序列的唯一真相文件，rule/vision/manual 三种来源逐级覆写，每段必须带 `source` + `confidence`。
 - 长度/速度统一用 `body_scale`（肩中-髋中距中位数）归一化，与 v1 口径一致。
 - 大文件（视频/PDF/report_assets 图）不入 git，见 .gitignore。

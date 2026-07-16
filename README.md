@@ -7,12 +7,14 @@
 - **v1 流水线**：可用。`climb_pose.py`（视频→骨架 CSV）+ `climb_analyze_report.py`（CSV→HTML 报告卡）。
 - **S1 动作知识库**：已完成。从教材《攀岩技術教本詳細圖解》（東秀磯）提炼 54 个动作，含分类/可判性/骨架规则/视觉线索/教材页码。
 - **S2 全身动作分段**：已完成。`climb_segments.py` 锚点位移法——手/脚末端净位移 ≥0.5 身长判"真换点"，输出 move/static 段 + 肢体换点事件两层；`climb_segments_review.py` 生成烧字幕审阅视频供人眼验收。IMG_6952 人眼零漏检，IMG_6424 零改参泛化通过。
-- **S3 节奏统计报告 v2a**：已实现，待老板验收。`climb_report_v2.py` 出「攀岩节奏报告卡.html」
-  + `metrics_v2.json`，六项指标：完成时间 / 切换耗时 / 难点 / 三段占比(move·rest·adjust) /
-  弯臂耗力 / 休息点质量。IMG_6942 + IMG_6152 两条素材抽帧自验证通过。
-  难点分**两类并列**：v2a「卡住型」（停顿长/同高度反复出手=不知道怎么办）与 v1「发力型」
-  （加速度+关节屈曲=拼尽全力），测的是正交现象，谁也不验证谁。遗留一项（rest 从未触发）
-  见 [PLAN.md](PLAN.md) 看板。
+- **S3 节奏统计报告 v2a**：已实现，待老板验收。六项指标：完成时间 / 切换耗时 / 难点 /
+  三段占比(move·rest·adjust) / 弯臂耗力 / 休息点质量。IMG_6942 + IMG_6152 抽帧自验证通过。
+- **合并报告卡**（2026-07-17）：一条线只出一张 `攀岩报告卡.html`，暗色·影像优先，
+  图表全内联 SVG，难点截图自动取景，时间线标记可悬浮看画面。
+  难点分**两类并列**：「卡住型」（停顿长/同高度反复出手=不知道怎么办，**可改**）与
+  v1 的「姿态极端」（**注意：v1 的 crux 实测退化成了"关节弯得深"排序，不是用力**，
+  详见 [PLAN.md](PLAN.md) §8）。遗留：rest 分支从未触发（你从不直臂休息），
+  休息点质量指标至今未验证。
 - S4-S10（规则匹配、视觉判定、标注回流、报告 v2b）：待做。
 - 历史两条视频（IMG_6424/6952）的分析产物已清理出工作区（2026-07-16）：均可由原视频一键重建，CSV 亦存于 git 历史（`git checkout 14b701f -- <path>` 可取回）。
 
@@ -25,27 +27,33 @@
 ```
 素材/IMG_6942/
 ├── IMG_6942.MOV              原片
-├── 攀岩动作报告卡.html         v1 报告卡
-├── 攀岩节奏报告卡.html         v2a 节奏报告卡  ← 从这看
+├── 攀岩报告卡.html            ← 从这看（一条线就这一张）
+├── 报告卡素材/                报告卡里的动作特写
 ├── 数据/                     3 份 CSV + metrics.json + metrics_v2.json + segments.json
-├── report_assets/            v1 图表 + crux 截图
-├── report_assets_v2/         v2a 图表
+│   └── v1原始/               v1 冻结脚本的副产品（用不到，它必然会生成）
 └── 标注视频/                  骨架标注视频 + 分段审阅视频
 ```
 
-分析一条新线（把 `<片名>.MOV` 放进 `素材/<片名>/` 后，四条命令一路到底）：
+分析一条新线（把 `<片名>.MOV` 放进 `素材/<片名>/` 后，五条命令一路到底）：
 
 ```bash
 pip install mediapipe==0.10.14 opencv-python numpy matplotlib pillow
 V=IMG_6942; D=素材/$V                                  # 改这一行即可换片
 python3 climb_pose.py "$D/$V.MOV" "$D/数据"                                    # 视频 → 骨架 CSV
 python3 climb_analyze_report.py --dir "$D/数据" --base $V \
-    --annotated "$D/数据/${V}_annotated.mp4" --out "$D"                        # v1 报告卡
-python3 climb_segments.py "$D/数据/${V}_pose2d.csv"                            # S2 分段+换点事件
-python3 climb_report_v2.py --dir "$D/数据" --base $V --out "$D"                # S3 节奏报告卡 v2a
+    --annotated "$D/数据/${V}_annotated.mp4" --out "$D/数据/v1原始"             # → metrics.json
+python3 climb_segments.py "$D/数据/${V}_pose2d.csv"                            # → segments.json
+python3 climb_report_v2.py --dir "$D/数据" --base $V --out "$D/数据/v1原始"     # → metrics_v2.json
+python3 climb_report_card.py --dir "$D/数据" --base $V \
+    --video "$D/$V.MOV" --out "$D"                                            # ★ 攀岩报告卡.html
 python3 climb_segments_review.py "$D/$V.MOV" "$D/数据/${V}_segments.json" \
-    --out "$D/标注视频/${V}_segments_review.mp4"                                # 审阅视频
+    --out "$D/标注视频/${V}_segments_review.mp4"                                # 审阅视频（可选）
 ```
+
+前四条是**算指标**，各自写自己的 `*.json`；最后 `climb_report_card.py` 只做**展示**，
+读那些 json 出唯一那张报告卡。所以改样式不用碰指标，改指标不用碰样式。
+中间两条的 `--out` 指到 `数据/v1原始/` 是因为它们会顺手生成各自的旧报告卡——用不到，
+但 v1 脚本冻结不能改，只好让它写到角落里。
 
 注意 mediapipe 要 0.10.14（≥0.10.2x 移除了 `mp.solutions` 旧 API，脚本会报错）。
 
@@ -87,7 +95,8 @@ kb_extract_pages.py。
 | `素材/<片名>/` | 一条线一个文件夹：原片 + 报告卡 + 数据 + 图表 + 标注视频（不入 git） |
 | `climb_pose.py` / `climb_analyze_report.py` | v1 流水线（冻结不改） |
 | `climb_segments.py` / `climb_segments_review.py` | S2 分段+换点事件 / 审阅视频生成 |
-| `climb_report_v2.py` | S3 节奏统计报告 v2a（阈值旋钮集中在文件顶部） |
+| `climb_report_v2.py` | S3 节奏指标 v2a → metrics_v2.json（阈值旋钮集中在文件顶部） |
+| `climb_report_card.py` | **合并报告卡**（展示层，读 metrics 出唯一那张 HTML） |
 | `knowledge_base/` | moves.json + lint/render/extract 脚本 + viewer |
 | `annotations/` | 老板人工左右覆写 JSON（不可再生资产，入 git） |
 | `cases/` | 标注案例库（S6 起启用） |
