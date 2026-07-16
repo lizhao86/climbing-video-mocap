@@ -583,27 +583,32 @@ def main():
     #   ② 「前臂先泵」是**凭空捏造**的——老板从没说过他前臂泵，我从阈值判定跳到了一个
     #      没人报告过的生理症状，还反过来给它编因果。
     # 现在只报数据本身，把"弯"和"接近直"分开数，不下没有证据的结论。
+    # 结论先行：先回答「我省不省力」，再给数，定义能省则省。
+    # 老板 2026-07-17：「省力这里也说了一堆有的没的，看不懂的话」——上一版开头就甩
+    # 「较直那条臂 ≥150° 且持续 >2 秒」，等于先背定义再讲结论。
     BENT_ISH = 120   # 静止段中位肘角低于此值 = 明确弯着扛；高于 = 接近伸直（只是没到 2 秒）
     stat_segs = [s for s in v2["adjusts"]["items"] if s.get("elbow_open_med") is not None]
-    n_bent_ish = sum(1 for s in stat_segs if s["elbow_open_med"] < BENT_ISH)
-    n_straight_ish = len(stat_segs) - n_bent_ish
-    if v2["rests"]["n"] == 0:
-        parts = [f"<b>没有检测到直臂休息</b>（较直那条臂 ≥{ELBOW_STRAIGHT_TXT}° 且持续 >2 秒）。"]
-        if n_bent_ish and n_straight_ish:
-            # 「最长」必须从**弯着的那几次**里取，不能从所有停顿里取——否则会拿一个
-            # 手臂其实伸直的长停顿去佐证"弯着扛"
-            bent_segs = [s for s in stat_segs if s["elbow_open_med"] < BENT_ISH]
-            longest = max(bent_segs, key=lambda s: s["dur_s"])
-            sm = [s["elbow_open_med"] for s in stat_segs if s["elbow_open_med"] >= BENT_ISH]
-            parts.append(f"停顿分两种：{n_bent_ish} 次弯着扛（最长 {longest['dur_s']:.1f} 秒，"
-                         f"肘角 {longest['elbow_open_med']:.0f}°），"
-                         f"{n_straight_ish} 次手臂接近伸直（{min(sm):.0f}–{max(sm):.0f}°），"
-                         f"只是不到 2 秒、算不上休息。<b>长停顿在扛，短停顿不。</b>")
-        elif n_bent_ish:
-            parts.append(f"{n_bent_ish} 次停顿手臂都弯着。")
-        rest_line = "".join(parts)
+    bent_segs = [s for s in stat_segs if s["elbow_open_med"] < BENT_ISH]
+    straight_segs = [s for s in stat_segs if s["elbow_open_med"] >= BENT_ISH]
+    if v2["rests"]["n"] == 0 and bent_segs and straight_segs:
+        # 「最长」必须从**弯着的那几次**里取，不能从所有停顿里取——否则会拿一个
+        # 手臂其实伸直的长停顿去佐证"弯着扛"
+        longest = max(bent_segs, key=lambda s: s["dur_s"])
+        sm = [s["elbow_open_med"] for s in straight_segs]
+        rest_head = "长停顿在扛，短停顿不。"
+        rest_line = (f"你一共停了 {len(stat_segs)} 次。{len(bent_segs)} 次手臂弯着扛"
+                     f"（最长 {longest['dur_s']:.1f} 秒，肘角 {longest['elbow_open_med']:.0f}°）；"
+                     f"{len(straight_segs)} 次手臂基本是直的（{min(sm):.0f}–{max(sm):.0f}°），"
+                     f"但都不到 2 秒。<b>没有一次算真休息</b>：真休息要伸直挂着超过 2 秒。")
+    elif v2["rests"]["n"] == 0 and bent_segs:
+        rest_head = "停下来的时候手臂都弯着。"
+        rest_line = (f"{len(bent_segs)} 次停顿手臂都在扛，没有一次伸直挂着超过 2 秒。")
+    elif v2["rests"]["n"] == 0:
+        rest_head = "没有一次算真休息。"
+        rest_line = "停顿都不到 2 秒，手臂没来得及伸直挂着歇。"
     else:
-        rest_line = (f"全程 {v2['rests']['n']} 次真休息，均分 {v2['rests']['mean_quality']}/100。")
+        rest_head = f"全程休息了 {v2['rests']['n']} 次。"
+        rest_line = f"平均质量 {v2['rests']['mean_quality']}/100。"
 
     # 行文原则（老板 2026-07-17：「行文能不能简洁，用词简单」）：
     # 短句、常用词、一句话说一件事。不要「——」串下去，不要为了气势加修辞。
@@ -753,8 +758,10 @@ h2 .cnt{{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:40
 .cruxes.small .tm{{font-size:19px}}
 .cruxes.small figcaption{{padding:11px 12px 13px}}
 .cruxes.small p{{font-size:11.5px}}
-.sub{{font-size:13px;color:var(--ink2);margin:0 0 12px}}
+.sub{{font-size:13px;color:var(--ink2);margin:0 0 12px;max-width:76ch;line-height:1.75}}
 .sub b{{color:var(--ink)}}
+/* 结论先行：一句话的答案，比下面的解释大一号 */
+.lead{{font-size:17px;font-weight:700;color:var(--ink);margin:0 0 8px}}
 @media(max-width:860px){{.cruxes.big,.cruxes.small{{grid-template-columns:repeat(2,1fr)}}}}
 
 .note{{font-size:12.5px;color:var(--ink3);margin-top:14px;line-height:1.7;max-width:80ch}}
@@ -823,16 +830,14 @@ td.empty{{color:var(--ink3)}}
   <div class="cruxes small">{power_cards}</div>
 
   <h2>省力<span class="cnt">弯臂 {v2['bent_arm']['n']} 段 · 真休息 {v2['rests']['n']} 次</span></h2>
+  <p class="lead">{rest_head}</p>
   <p class="sub">{rest_line}</p>
   <table>
     <tr><th>弯臂时段</th><th>时长</th><th>最弯</th><th>平均</th></tr>{bent_rows}
   </table>
-  <p class="note">判定：静止时<b>较直的那条手臂</b>肘角仍小于 {ELBOW_STRAIGHT_TXT}°，且连续超过 2 秒。
-  有一条臂伸直就不算，因为体重挂在骨头上不费力。
-  <br><b>这项有多准：</b>肘角靠 MediaPipe 猜 3D，单目猜深度不准。要同时通过两道检查才采信：
-  肘和腕看得见；3D 算出的前臂/上臂比例合人体（真人约 1.0）。
-  <b>两道都过的帧占 {elbow_valid_pct:.0f}%</b>，其余不参与判定。
-  <br>还有个死角：<b>直臂和朝镜头弯的手臂，在画面上都是一条直线</b>，2D 分不出来。</p>
+  <p class="note">只要有一条手臂伸直，体重就挂在骨头上，不费力。所以只看比较直的那条。
+  <br>肘角靠单目猜 3D，不太准：<b>只有 {elbow_valid_pct:.0f}% 的帧够可信</b>，其余不参与判定。
+  朝镜头方向弯的手臂，画面上看着也是直的，分不出来。</p>
 
   <div class="two">
     <div>
