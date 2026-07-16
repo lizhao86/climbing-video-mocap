@@ -58,6 +58,15 @@ VIS_MIN      = 0.30   # 可见度门槛，**左右臂各自独立判定**（见 
                       # "至少一条臂可用"的帧回到 77%。肘角本身取自 world landmarks，
                       # 已抽帧人眼核对：低可见度下角度依然准（IMG_6942 的 3.8s 直臂 167°、
                       # 4.2s 弯臂 94° 与画面一致），故门槛只挡真遮挡，不宜设高。
+ANAT_LO, ANAT_HI = 0.70, 1.40
+                      # ★解剖学体检★ 3D 重建的 前臂/上臂 长度比若落在此区间外，判定该帧
+                      # 该条手臂的 world landmarks 是坏的，肘角不采信。真人这个比值 ≈0.95-1.05。
+                      # 2026-07-17 加，起因：老板说「14.4s 图里右臂看着挺直的」，查下去发现
+                      # 左臂的 3D 前臂比上臂长 65%（解剖学不可能），角度自然是垃圾。
+                      # 实测更糟：全片只有 47-63% 的帧解剖学可信，而且**可见度分数预测不了**
+                      # 重建质量——15-20% 的帧可见度达标却解剖学不可能。可见度和解剖学是
+                      # 两个独立的体检项，必须都过。实测这条门槛把一个被烂重建撑到 149°
+                      # （差点够到直臂线 150° 被判成"休息"）的静止段打回 123° 真值。
 VIS_GAP_FILL_S = 0.50 # 短于此秒数的"看不见"空洞按线性插值补上：可见度会瞬时闪断，
                       # 0.2s 的闪断不代表手臂状态变了，但会把连续弯臂段切碎、
                       # 使其达不到 BENT_MIN_S 而漏检（实测 4.6s 的弯臂段被切成 2.1s）。
@@ -156,6 +165,7 @@ def main():
     # ── 读数据 ───────────────────────────────────────────────
     d2 = load_csv(os.path.join(A.dir, f"{A.base}_pose2d.csv"))
     an = load_csv(os.path.join(A.dir, f"{A.base}_angles.csv"))
+    lm = load_csv(os.path.join(A.dir, f"{A.base}_landmarks.csv"))   # 3D，做解剖学体检用
     S = json.load(open(seg_path, encoding="utf-8"))
     v1 = json.load(open(v1_path, encoding="utf-8")) if os.path.exists(v1_path) else {}
 
@@ -194,6 +204,25 @@ def main():
     # 与门会把整帧废掉（实测只剩 9% 帧可用）。
     ok_l = (col(d2, "left_elbow_vis") > VIS_MIN) & (col(d2, "left_wrist_vis") > VIS_MIN)
     ok_r = (col(d2, "right_elbow_vis") > VIS_MIN) & (col(d2, "right_wrist_vis") > VIS_MIN)
+
+    # 解剖学体检：3D 重建的 前臂/上臂 比不合人体 → 该帧该臂的肘角不采信（见 ANAT_LO/HI）
+    def anat_ok(side):
+        def P3(j):
+            return np.vstack([col(lm, f"{side}_{j}_x"), col(lm, f"{side}_{j}_y"),
+                              col(lm, f"{side}_{j}_z")]).T
+        sh3, el3, wr3 = P3("shoulder"), P3("elbow"), P3("wrist")
+        upper = np.linalg.norm(el3 - sh3, axis=1)
+        fore = np.linalg.norm(wr3 - el3, axis=1)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            r = fore / upper
+        return (r > ANAT_LO) & (r < ANAT_HI)
+    # landmarks.csv 与 pose2d.csv 都只在检出帧写行，行数一致；保险起见按长度对齐
+    n_ok = min(len(lm), N)
+    a_l, a_r = np.zeros(N, bool), np.zeros(N, bool)
+    a_l[:n_ok] = anat_ok("left")[:n_ok]
+    a_r[:n_ok] = anat_ok("right")[:n_ok]
+    ok_l &= a_l
+    ok_r &= a_r
     # 「最直的那条臂」——只要有一条臂是直的就不算弯臂耗力；看不见的臂不参与取 max
     with np.errstate(all="ignore"):
         import warnings
@@ -439,6 +468,7 @@ def main():
                    "TOP_HOLD_S": TOP_HOLD_S, "TOP_TOL": TOP_TOL,
                    "PREP_CRUX_K": PREP_CRUX_K, "HEIGHT_BIN": HEIGHT_BIN, "BIN_MOVE_N": BIN_MOVE_N,
                    "REPEAT_MIN_SPAN_S": REPEAT_MIN_SPAN_S, "VIS_GAP_FILL_S": VIS_GAP_FILL_S,
+                   "ANAT_LO": ANAT_LO, "ANAT_HI": ANAT_HI,
                    "CRUX_MATCH_S": CRUX_MATCH_S, "ELBOW_STRAIGHT": ELBOW_STRAIGHT,
                    "BENT_MIN_S": BENT_MIN_S, "REST_MIN_S": REST_MIN_S,
                    "REST_MAX_SPD": REST_MAX_SPD, "REST_LONG_S": REST_LONG_S,

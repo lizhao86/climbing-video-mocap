@@ -184,13 +184,32 @@ def main():
     A_ = {k: ang_series(k) for k in ["left_knee", "right_knee", "left_elbow", "right_elbow"]}
     # 可见度门槛：和 metrics_v2 的口径一致，**每条肢体各自判定**。不加这个会把遮挡时的
     # 噪声当结论印在卡上——实测左肘原始最小值 12°，那是骨架飘了，不是他真把手臂折成 12°。
-    VIS_MIN = 0.30
+    # 另加**解剖学体检**（与 metrics_v2 同口径）：3D 重建的 前臂/上臂 比不合人体的帧，
+    # 该臂的肘角是垃圾，不采信。可见度分数**预测不了**重建质量——实测 15-20% 的帧
+    # 可见度达标却解剖学不可能，两个体检项互相独立，必须都过。
+    VIS_MIN, ANAT_LO, ANAT_HI = 0.30, 0.70, 1.40
+    lm = load_csv(os.path.join(A.dir, f"{A.base}_landmarks.csv"))
+
+    def anat_ok(side, a, b, c_):
+        def P3(j):
+            return np.vstack([col(lm, f"{side}_{j}_x"), col(lm, f"{side}_{j}_y"),
+                              col(lm, f"{side}_{j}_z")]).T
+        p1, p2, p3 = P3(a), P3(b), P3(c_)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            r = np.linalg.norm(p3 - p2, axis=1) / np.linalg.norm(p2 - p1, axis=1)
+        out = np.zeros(N, bool)
+        m_ = min(len(r), N)
+        out[:m_] = (r[:m_] > ANAT_LO) & (r[:m_] < ANAT_HI)
+        return out
+
     gate = {}
     for side in ["left", "right"]:
         gate[f"{side}_elbow"] = ((col(d2, f"{side}_elbow_vis") > VIS_MIN)
-                                 & (col(d2, f"{side}_wrist_vis") > VIS_MIN))
+                                 & (col(d2, f"{side}_wrist_vis") > VIS_MIN)
+                                 & anat_ok(side, "shoulder", "elbow", "wrist"))
         gate[f"{side}_knee"] = ((col(d2, f"{side}_knee_vis") > VIS_MIN)
-                                & (col(d2, f"{side}_ankle_vis") > VIS_MIN))
+                                & (col(d2, f"{side}_ankle_vis") > VIS_MIN)
+                                & anat_ok(side, "hip", "knee", "ankle"))
     Ag = {k: np.where(gate[k], v, np.nan) for k, v in A_.items()}
     # 「较直那条臂」的肘角——弯臂判定的核心量，与 metrics_v2 同口径
     with warnings_ignore():
@@ -529,10 +548,38 @@ def main():
     # ── 解读 ───────────────────────────────────────────────
     det_rate = f"{v1['frames']}/{v1['frames']} (100%)" if len(d2) == v1["frames"] else \
         f"{len(d2)}/{v1['frames']} ({100*len(d2)/v1['frames']:.0f}%)"
+    ELBOW_STRAIGHT_TXT = v2["params"]["ELBOW_STRAIGHT"]
+    # 肘角有效帧占比：可见度 + 解剖学两道门槛都过的帧。这个数字要露出来——
+    # 它决定了弯臂/休息这两项结论有多硬
+    elbow_valid_pct = 100 * float(np.mean(~np.isnan(eo_g)))
 
+    # ⚠️ 这段话曾经写成「全程没有一次真休息，你的停顿全是弯着胳膊找点，这是前臂先泵的
+    # 直接原因」，被老板顶回来了，两处都该顶：
+    #   ① 「全是弯着」是假的——逐段看，只有长停顿明确弯着（81-86°），短停顿手臂接近伸直
+    #      （131-143°）。用一个"没够到 150°"的阈值判定，去概括所有停顿的姿态，是过度推断。
+    #   ② 「前臂先泵」是**凭空捏造**的——老板从没说过他前臂泵，我从阈值判定跳到了一个
+    #      没人报告过的生理症状，还反过来给它编因果。
+    # 现在只报数据本身，把"弯"和"接近直"分开数，不下没有证据的结论。
+    BENT_ISH = 120   # 静止段中位肘角低于此值 = 明确弯着扛；高于 = 接近伸直（只是没到 2 秒）
+    stat_segs = [s for s in v2["adjusts"]["items"] if s.get("elbow_open_med") is not None]
+    n_bent_ish = sum(1 for s in stat_segs if s["elbow_open_med"] < BENT_ISH)
+    n_straight_ish = len(stat_segs) - n_bent_ish
     if v2["rests"]["n"] == 0:
-        rest_line = ("<b>全程没有一次真休息。</b>你的停顿全是弯着胳膊找点——"
-                     "停下来时手臂还在扛，比直臂挂着更耗前臂，这是前臂先泵的直接原因。")
+        parts = [f"<b>没有检测到直臂休息</b>（较直那条臂 ≥{ELBOW_STRAIGHT_TXT}° 且持续 >2 秒）。"]
+        if n_bent_ish and n_straight_ish:
+            # 「最长」必须从**弯着的那几次**里取，不能从所有停顿里取——否则会拿一个
+            # 手臂其实伸直的长停顿去佐证"弯着扛"
+            bent_segs = [s for s in stat_segs if s["elbow_open_med"] < BENT_ISH]
+            longest = max(bent_segs, key=lambda s: s["dur_s"])
+            sm = [s["elbow_open_med"] for s in stat_segs if s["elbow_open_med"] >= BENT_ISH]
+            parts.append(f"但停顿分两种：{n_bent_ish} 次明确弯着扛（最长的一次 "
+                         f"{longest['dur_s']:.1f} 秒，肘角中位 {longest['elbow_open_med']:.0f}°），"
+                         f"另 {n_straight_ish} 次手臂其实接近伸直"
+                         f"（{min(sm):.0f}–{max(sm):.0f}°），只是都短于 2 秒、算不上休息。"
+                         f"<b>所以不是「停顿全在弯着扛」</b>——是长停顿在扛，短停顿不。")
+        elif n_bent_ish:
+            parts.append(f"{n_bent_ish} 次停顿手臂都明确弯着。")
+        rest_line = "".join(parts)
     else:
         rest_line = (f"全程 {v2['rests']['n']} 次真休息，均分 {v2['rests']['mean_quality']}/100。")
 
@@ -546,9 +593,10 @@ def main():
         takes.append("<b>全程没有卡顿。</b>没有异常长的停顿，也没在同一高度反复试探，路线读得很顺。")
     if v2["bent_arm"]["n"]:
         wb = max(bents, key=lambda b: b["dur_s"])
-        takes.append(f"<b>弯臂耗力 {v2['bent_arm']['total_s']:.1f} 秒</b>（占攀爬 "
-                     f"{v2['bent_arm']['pct_of_climb']:.0f}%），最长一段 {wb['dur_s']:.1f} 秒。"
-                     f"停下来的时候把手臂伸直、让体重挂在骨架上，前臂能省很多。")
+        takes.append(f"<b>{wb['start_s']:.0f}–{wb['end_s']:.0f} 秒这 {wb['dur_s']:.1f} 秒，"
+                     f"手臂明确弯着扛</b>（平均 {wb['mean_elbow_deg']:.0f}°，最弯 "
+                     f"{wb['min_elbow_deg']:.0f}°）。这一段和你卡住的位置重合——"
+                     f"想不出下一步的时候，先把手臂伸直挂着再想，比弯着耗在那儿省力。")
     if pmed > 1.0:
         takes.append(f"<b>出手前平均停 {v2['prep']['mean_s']:.2f} 秒</b>（中位数 {pmed:.2f}s），"
                      f"偏长，属于想清楚再动的稳健型。稳但耗时，体力线上可以更连贯。")
@@ -568,6 +616,23 @@ def main():
                      f"主动找{'右' if p_ > 50 else '左'}{w_}点可以平衡发力。")
     take_html = "".join(f'<div class="take">{x}</div>' for x in takes)
     route_badge = f' · {A.route}' if A.route else ""
+
+    # 开场白只讲这条线上真实发生的事，不外推到「你这个人怎么样」
+    vd = [f"这条线你用 <b>{C['climb_time_s']:.1f} 秒</b> 完攀，"
+          f"净上升 <b>{C['net_gain_bl']:.2f} 身长</b>。"]
+    if stuck:
+        sp = (f"{min(c['t'] for c in stuck):.0f}–{max(c['t'] for c in stuck):.0f} 秒"
+              if len(stuck) > 1 else f"{stuck[0]['t']:.0f} 秒")
+        vd.append(f"最值得回看的是 <b>{sp}</b>——你卡在同一个高度上不去")
+        ov = [b for b in bents if b["end_s"] > min(c["t"] for c in stuck)
+              and b["start_s"] < max(c["t"] for c in stuck)] if bents else []
+        if ov:
+            # 「其中 X 秒」而不是「一直」——弯臂只占卡住窗口的一部分，别夸大
+            vd.append(f"，其中 <b>{sum(b['dur_s'] for b in ov):.1f} 秒</b>手臂明确弯着扛"
+                      f"（平均 {ov[0]['mean_elbow_deg']:.0f}°）。")
+        else:
+            vd.append("。")
+    verdict = "".join(vd)
 
     HTML = f'''<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -699,9 +764,7 @@ td.empty{{color:var(--ink3)}}
 <div class="wrap">
   <div class="eyebrow"><span class="lat">Climb Report</span>{route_badge}</div>
   <h1>{A.base}</h1>
-  <p class="verdict">这条线你用 <b>{C['climb_time_s']:.1f} 秒</b> 完攀，净上升 <b>{C['net_gain_bl']:.2f} 身长</b>。
-  最值得看的是 <b>{stuck[0]['t']:.0f}–{stuck[-1]['t']:.0f} 秒</b>——你卡在同一个高度，
-  手臂弯着扛了 <b>{v2['bent_arm']['total_s']:.1f} 秒</b>。全程<b>没有一次直臂休息</b>。</p>
+  <p class="verdict">{verdict}</p>
 
   <div class="kpis">
     <div class="kpi hi"><div class="n">{C['climb_time_s']:.1f}<span class="u">s</span></div>
@@ -745,9 +808,15 @@ td.empty{{color:var(--ink3)}}
   <table>
     <tr><th>弯臂时段</th><th>时长</th><th>最弯</th><th>平均</th></tr>{bent_rows}
   </table>
-  <p class="note">判定：静止段内<b>较直的那条手臂</b>肘角仍 &lt;150° 且连续超过 2 秒。
+  <p class="note">判定：静止段内<b>较直的那条手臂</b>肘角仍 &lt;{ELBOW_STRAIGHT_TXT}° 且连续超过 2 秒。
   只要有一条臂伸直就不算——挂在骨架上不费力，两条都弯着才是肌肉在扛。
-  肘/腕可见度不足的帧已排除（遮挡≠弯臂）。</p>
+  <br><b>这一项有多硬：</b>肘角来自 MediaPipe 的 3D 重建，单目猜深度并不可靠。
+  两道体检——可见度（肘/腕都要看得见）+ 解剖学（3D 重建的前臂/上臂比要合人体，
+  真人 ≈1.0）——<b>都通过的帧只占 {elbow_valid_pct:.0f}%</b>，其余帧不参与判定。
+  两道是独立的：实测 15-20% 的帧可见度达标却解剖学不可能（前臂算出来比上臂长 65%）。
+  <br>另外<b>单目看不出朝深度方向的弯</b>：直臂在画面里投影是直线，朝相机弯的手臂投影
+  也是直线，二者在 2D 上无法区分——所以「看着挺直」和「其实弯着」都可能，
+  这里以 3D 重建为准，但仅在上述两道体检都过时才采信。</p>
 
   <div class="two">
     <div>
