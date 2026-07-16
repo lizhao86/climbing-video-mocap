@@ -575,64 +575,61 @@ def main():
             bent_segs = [s for s in stat_segs if s["elbow_open_med"] < BENT_ISH]
             longest = max(bent_segs, key=lambda s: s["dur_s"])
             sm = [s["elbow_open_med"] for s in stat_segs if s["elbow_open_med"] >= BENT_ISH]
-            parts.append(f"但停顿分两种：{n_bent_ish} 次明确弯着扛（最长的一次 "
-                         f"{longest['dur_s']:.1f} 秒，肘角中位 {longest['elbow_open_med']:.0f}°），"
-                         f"另 {n_straight_ish} 次手臂其实接近伸直"
-                         f"（{min(sm):.0f}–{max(sm):.0f}°），只是都短于 2 秒、算不上休息。"
-                         f"<b>所以不是「停顿全在弯着扛」</b>——是长停顿在扛，短停顿不。")
+            parts.append(f"停顿分两种：{n_bent_ish} 次弯着扛（最长 {longest['dur_s']:.1f} 秒，"
+                         f"肘角 {longest['elbow_open_med']:.0f}°），"
+                         f"{n_straight_ish} 次手臂接近伸直（{min(sm):.0f}–{max(sm):.0f}°），"
+                         f"只是不到 2 秒、算不上休息。<b>长停顿在扛，短停顿不。</b>")
         elif n_bent_ish:
-            parts.append(f"{n_bent_ish} 次停顿手臂都明确弯着。")
+            parts.append(f"{n_bent_ish} 次停顿手臂都弯着。")
         rest_line = "".join(parts)
     else:
         rest_line = (f"全程 {v2['rests']['n']} 次真休息，均分 {v2['rests']['mean_quality']}/100。")
 
+    # 行文原则（老板 2026-07-17：「行文能不能简洁，用词简单」）：
+    # 短句、常用词、一句话说一件事。不要「——」串下去，不要为了气势加修辞。
     takes = []
     if stuck:
         sp = (f"{min(c['t'] for c in stuck):.0f}–{max(c['t'] for c in stuck):.0f} 秒"
               if len(stuck) > 1 else f"{stuck[0]['t']:.0f} 秒")
-        takes.append(f"<b>先看 {sp}。</b>这是你真正卡住的地方——不是拉不动，是不知道下一步怎么走。"
-                     f"回看录像时重点想这里的解法。")
+        takes.append(f"<b>先看 {sp}。</b>你卡在这里。不是拉不动，是没想好下一步。")
     else:
-        takes.append("<b>全程没有卡顿。</b>没有异常长的停顿，也没在同一高度反复试探，路线读得很顺。")
+        takes.append("<b>全程没卡壳。</b>没有特别长的停顿，也没在同一高度反复试探。")
     if v2["bent_arm"]["n"]:
         wb = max(bents, key=lambda b: b["dur_s"])
-        takes.append(f"<b>{wb['start_s']:.0f}–{wb['end_s']:.0f} 秒这 {wb['dur_s']:.1f} 秒，"
-                     f"手臂明确弯着扛</b>（平均 {wb['mean_elbow_deg']:.0f}°，最弯 "
-                     f"{wb['min_elbow_deg']:.0f}°）。这一段和你卡住的位置重合——"
-                     f"想不出下一步的时候，先把手臂伸直挂着再想，比弯着耗在那儿省力。")
+        takes.append(f"<b>{wb['start_s']:.0f}–{wb['end_s']:.0f} 秒，手臂弯着扛了 "
+                     f"{wb['dur_s']:.1f} 秒</b>（平均 {wb['mean_elbow_deg']:.0f}°）。"
+                     f"正好是你卡住的那段。想不出下一步时先把手臂伸直挂着，省力。")
     if pmed > 1.0:
-        takes.append(f"<b>出手前平均停 {v2['prep']['mean_s']:.2f} 秒</b>（中位数 {pmed:.2f}s），"
-                     f"偏长，属于想清楚再动的稳健型。稳但耗时，体力线上可以更连贯。")
+        takes.append(f"<b>出手前中位停 {pmed:.2f} 秒</b>，偏长。想清楚再动，稳，但费时间。")
     else:
-        takes.append(f"<b>出手前中位停顿仅 {pmed:.2f} 秒</b>，动作衔接果断、几乎不犹豫。")
+        takes.append(f"<b>出手前中位停 {pmed:.2f} 秒</b>，很果断，几乎不犹豫。")
     eff = v1["efficiency"]
-    takes.append(f"<b>攀爬效率 {eff*100:.0f}%</b>（净上升 ÷ 重心总走线，横向 {v1['horizontal']:.1f} "
-                 f"vs 纵向 {v1['vertical']:.1f} 身长）。" +
-                 ("多余横移少，路线读得不错。" if eff >= 0.3 else
-                  "有较多横移和试探，目标动作前先读线可以减少折返。"))
+    if eff >= 0.3:
+        takes.append(f"<b>攀爬效率 {eff*100:.0f}%</b>，不错。多余的横移少。")
+    else:
+        takes.append(f"<b>攀爬效率 {eff*100:.0f}%</b>，偏低：横向走了 {v1['horizontal']:.1f} 身长，"
+                     f"纵向才 {v1['vertical']:.1f}。多在找点试探。出手前先把线读定，能少折返。")
     arm, leg = v1["left_arm_usage_pct"], v1["left_leg_usage_pct"]
     imb = max(abs(arm - 50), abs(leg - 50))
     if imb >= 10:   # 阈值 12 会漏掉 IMG_6152 的 61/39（偏差 11）——那已经是 1.6 倍差距了
         w_ = "手" if abs(arm - 50) >= abs(leg - 50) else "脚"
         p_ = arm if w_ == "手" else leg
-        takes.append(f"<b>{w_}上偏{'左' if p_ > 50 else '右'}（{p_}%）。</b>"
-                     f"主动找{'右' if p_ > 50 else '左'}{w_}点可以平衡发力。")
+        takes.append(f"<b>{w_}上偏{'左' if p_ > 50 else '右'}，{p_}%。</b>"
+                     f"多找{'右' if p_ > 50 else '左'}{w_}点，两边能匀一些。")
     take_html = "".join(f'<div class="take">{x}</div>' for x in takes)
     route_badge = f' · {A.route}' if A.route else ""
 
     # 开场白只讲这条线上真实发生的事，不外推到「你这个人怎么样」
-    vd = [f"这条线你用 <b>{C['climb_time_s']:.1f} 秒</b> 完攀，"
-          f"净上升 <b>{C['net_gain_bl']:.2f} 身长</b>。"]
+    vd = [f"<b>{C['climb_time_s']:.1f} 秒</b>完攀，净上升 <b>{C['net_gain_bl']:.2f} 身长</b>。"]
     if stuck:
         sp = (f"{min(c['t'] for c in stuck):.0f}–{max(c['t'] for c in stuck):.0f} 秒"
               if len(stuck) > 1 else f"{stuck[0]['t']:.0f} 秒")
-        vd.append(f"最值得回看的是 <b>{sp}</b>——你卡在同一个高度上不去")
+        vd.append(f"最值得回看 <b>{sp}</b>，你卡在同一个高度上不去")
         ov = [b for b in bents if b["end_s"] > min(c["t"] for c in stuck)
               and b["start_s"] < max(c["t"] for c in stuck)] if bents else []
         if ov:
             # 「其中 X 秒」而不是「一直」——弯臂只占卡住窗口的一部分，别夸大
-            vd.append(f"，其中 <b>{sum(b['dur_s'] for b in ov):.1f} 秒</b>手臂明确弯着扛"
-                      f"（平均 {ov[0]['mean_elbow_deg']:.0f}°）。")
+            vd.append(f"，其中 <b>{sum(b['dur_s'] for b in ov):.1f} 秒</b>手臂弯着扛。")
         else:
             vd.append("。")
     verdict = "".join(vd)
@@ -791,19 +788,17 @@ td.empty{{color:var(--ink3)}}
       <span><i style="background:{C_POWER}"></i>发力型吃力点 / 弯臂段</span>
     </div>
   </div>
-  <p class="note">白线是你的重心高度。下方窄条是较直那条手臂的肘角，粉底=弯着扛。
-  <b style="color:var(--ink2)">鼠标扫过顶部的三角标记，可以直接看到那一刻的画面。</b></p>
+  <p class="note">白线是重心高度。下面窄条是较直那条手臂的肘角，粉底那段是弯着扛。
+  <b style="color:var(--ink2)">鼠标扫过顶部的三角，能看到那一刻的画面。</b></p>
 
   <h2>卡住的地方<span class="cnt">{len(stuck)} 处 · 最值得回看</span></h2>
-  <p class="sub">停顿异常长，或在同一高度反复出手上不去。<b>你在这里不知道怎么办</b>——
-  这是能靠读线和动作解决的，也是这条线真正的难点。</p>
+  <p class="sub">停顿特别长，或者在同一高度反复出手却上不去。<b>这里是你没想明白怎么走的地方。</b></p>
   <div class="cruxes big">{stuck_cards}</div>
 
   <h2>姿态最极端的瞬间<span class="cnt">{len(power)} 处 · 仅供参考</span></h2>
-  <p class="sub">这是 v1 报告卡的「吃力点」。<b>它测的不是用力</b>——拆开公式后发现，
-  重心加速度和肢体速度那两项被极端离群值压扁（全片 90 分位仅 0.04 / 0.73），
-  实际主导的是关节屈曲项。<b>膝盖弯得深不等于费力</b>，也可能只是舒服地踩在脚点上。
-  所以这里如实报出每一处到底是哪一项撑起来的，值不值得看你自己判断。</p>
+  <p class="sub">这是 v1 的「吃力点」，但<b>它测的是关节弯曲，不是用力</b>。
+  膝盖弯得深不一定费力，也可能只是踩得舒服。每张卡标了它是哪一项撑起来的，
+  值不值得看你自己定。</p>
   <div class="cruxes small">{power_cards}</div>
 
   <h2>省力<span class="cnt">弯臂 {v2['bent_arm']['n']} 段 · 真休息 {v2['rests']['n']} 次</span></h2>
@@ -811,15 +806,12 @@ td.empty{{color:var(--ink3)}}
   <table>
     <tr><th>弯臂时段</th><th>时长</th><th>最弯</th><th>平均</th></tr>{bent_rows}
   </table>
-  <p class="note">判定：静止段内<b>较直的那条手臂</b>肘角仍 &lt;{ELBOW_STRAIGHT_TXT}° 且连续超过 2 秒。
-  只要有一条臂伸直就不算——挂在骨架上不费力，两条都弯着才是肌肉在扛。
-  <br><b>这一项有多硬：</b>肘角来自 MediaPipe 的 3D 重建，单目猜深度并不可靠。
-  两道体检——可见度（肘/腕都要看得见）+ 解剖学（3D 重建的前臂/上臂比要合人体，
-  真人 ≈1.0）——<b>都通过的帧只占 {elbow_valid_pct:.0f}%</b>，其余帧不参与判定。
-  两道是独立的：实测 15-20% 的帧可见度达标却解剖学不可能（前臂算出来比上臂长 65%）。
-  <br>另外<b>单目看不出朝深度方向的弯</b>：直臂在画面里投影是直线，朝相机弯的手臂投影
-  也是直线，二者在 2D 上无法区分——所以「看着挺直」和「其实弯着」都可能，
-  这里以 3D 重建为准，但仅在上述两道体检都过时才采信。</p>
+  <p class="note">判定：静止时<b>较直的那条手臂</b>肘角仍小于 {ELBOW_STRAIGHT_TXT}°，且连续超过 2 秒。
+  有一条臂伸直就不算，因为体重挂在骨头上不费力。
+  <br><b>这项有多准：</b>肘角靠 MediaPipe 猜 3D，单目猜深度不准。要同时通过两道检查才采信：
+  肘和腕看得见；3D 算出的前臂/上臂比例合人体（真人约 1.0）。
+  <b>两道都过的帧占 {elbow_valid_pct:.0f}%</b>，其余不参与判定。
+  <br>还有个死角：<b>直臂和朝镜头弯的手臂，在画面上都是一条直线</b>，2D 分不出来。</p>
 
   <div class="two">
     <div>
@@ -838,9 +830,9 @@ td.empty{{color:var(--ink3)}}
 
   <h2>每次出手前，你停了多久<span class="cnt">中位数 {pmed:.2f}s · 最长 {v2['prep']['max_s']:.2f}s</span></h2>
   <div class="tlbox">{prep_svg}</div>
-  <p class="note">每根柱=一次出手前的停顿，柱下标注出手时刻与主导肢体。绿线=中位数
-  {pmed:.2f}s，青线=<b>难点线</b>（中位数 ×{v2['params']['PREP_CRUX_K']} = {plim:.2f}s），
-  超过即记为「卡住型 · 犹豫」难点。</p>
+  <p class="note">每根柱是一次出手前的停顿，柱下是出手时刻和主导肢体。
+  绿线是中位数 {pmed:.2f}s，青线是<b>难点线</b>（中位数的 {v2['params']['PREP_CRUX_K']} 倍
+  = {plim:.2f}s）。超过青线的算「卡住型 · 犹豫」。</p>
 
   <h2>时间去哪了<span class="cnt">起攀 → 完攀 共 {C['climb_time_s']:.1f}s</span></h2>
   <div class="tlbox">{split_svg}</div>
@@ -849,12 +841,13 @@ td.empty{{color:var(--ink3)}}
   <h2>解读</h2>
   {take_html}
 
-  <div class="note foot"><b>数据口径。</b>单摄像头 + 相机静止，MediaPipe 骨架估计，
-  人体检出率 {det_rate}。长度和速度都以<b>身长</b>（你的肩中—髋中距）为单位，
-  这样换手机、换机位、换人都能比，代价是它反映相对趋势而非实验室级绝对测量；
-  单目对深度不敏感，以画面内运动为主。起攀时刻用「手举过肩」先框定上墙时刻再判定，
-  因为走向岩壁时人在深度方向移动，2D 重心高度会被透视被动抬高。
-  阈值参数集中在 climb_report_v2.py 顶部，本次取值见 metrics_v2.json 的 params 字段。</div>
+  <div class="note foot"><b>数据口径。</b>单摄像头、相机不动，用 MediaPipe 估骨架，
+  这条线检出 {det_rate}。
+  长度和速度都用<b>身长</b>（你肩中点到髋中点的距离）当单位，所以换手机、换机位、换人都能比。
+  代价是它看的是相对趋势，不是实验室级的绝对测量。单目对深度不敏感，主要看画面内的运动。
+  起攀时刻先用「手举过肩」定位上墙，再算重心——因为走向岩壁时人在往远处走，
+  画面里重心会被透视抬高，看着像在爬。
+  阈值都在 climb_report_v2.py 顶部，本次取值见 metrics_v2.json 的 params。</div>
 </div>'''
 
     out_html = os.path.join(A.out, "攀岩报告卡.html")
