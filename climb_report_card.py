@@ -85,39 +85,160 @@ def imwrite_unicode(path, img, quality=88):
     return True
 
 
-def grab_frames(video, times, bboxes, outdir, tag, width=520):
-    """按时间抽帧，用骨架包围盒自动取景裁成 4:5 竖构图。返回文件名列表。"""
+CLIP_PRE, CLIP_POST = 1.0, 2.0   # 片段覆盖切面前 1 秒、后 2 秒
+CLIP_CRF = 24                    # 片段帧率跟源走，不重采样（见 grab_shots 的 VFR 注释）
+
+# 悬浮播放的 JS。**放模块级常量、不写进 HTML 的 f-string**：f-string 会把 JS 的 `{`
+# 当插值起手，非得写成 `{{` 才行，一段几十行的 JS 会被转义符淹掉。
+HOVER_JS = """<script>
+// 视频是 preload="none"，不悬浮就一个字节都不下载。
+// 事件挂在 .crux / .hot 上而不是 video 自己：浮窗里的 video 只在父级 :hover 时
+// 才可见，鼠标根本落不到 video 身上。
+(function () {
+  document.querySelectorAll('.crux video, .pop video').forEach(function (v) {
+    var host = v.closest('.crux, .hot');
+    if (!host) return;
+    host.addEventListener('mouseenter', function () {
+      v.currentTime = 0;   // 每次都从片头（切面前 1 秒）看起，否则第二次悬浮会从
+                           // 上次 mouseleave 停的地方（切面）起播，"前 1 秒"就没了
+      // 快速划过时 play() 的 Promise 会被随即而来的 pause() 打断而 reject，吞掉
+      var p = v.play();
+      if (p && p.catch) p.catch(function () {});
+    });
+    host.addEventListener('mouseleave', function () {
+      v.pause();
+      // 回到「切面那一刻」而不是片头：片子是从切面前 1 秒起的，归零会让卡片停在
+      // 早 1 秒的帧上，跟旁边写的时刻/角度对不上。data-t 就是这个偏移。
+      v.currentTime = parseFloat(v.dataset.t) || 0;
+    });
+  });
+})();
+</script>"""
+
+
+def video_size(video):
+    """视频的 (宽, 高)。走 cv2.VideoCapture——读非 ASCII 路径是正常的（FFmpeg 后端），
+    只有 imwrite/imread 有那个坑。"""
     import cv2
-    os.makedirs(outdir, exist_ok=True)
     cap = cv2.VideoCapture(video)
     if not cap.isOpened():
         raise IOError(f"打不开视频: {video}")
-    names = []
-    for i, (ts, bb) in enumerate(zip(times, bboxes)):
-        cap.set(cv2.CAP_PROP_POS_MSEC, float(ts) * 1000.0)
-        ok, f = cap.read()
-        if not ok:
-            names.append(None)
-            continue
-        H, W = f.shape[:2]
-        cx, cy, bw, bh = bb          # 归一化的人体中心与尺寸
-        # 取景：包围盒放大到带余量，锁 4:5，越界则平移回画面内
-        ch = min(1.0, max(bh * 1.9, 0.34))
-        cw = ch * (4 / 5) * (H / W)  # 归一化坐标下换算出 4:5 的像素比
-        cw = min(1.0, cw)
-        x0 = min(max(cx - cw / 2, 0.0), 1.0 - cw)
-        y0 = min(max(cy - ch / 2, 0.0), 1.0 - ch)
-        crop = f[int(y0 * H):int((y0 + ch) * H), int(x0 * W):int((x0 + cw) * W)]
-        if crop.size == 0:
-            names.append(None)
-            continue
-        h2, w2 = crop.shape[:2]
-        crop = cv2.resize(crop, (width, int(round(h2 * width / w2))))
-        fn = f"{tag}_{i}.jpg"
-        imwrite_unicode(os.path.join(outdir, fn), crop)
-        names.append(fn)
+    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
-    return names
+    return w, h
+
+
+def frame_box(bb_at, bb_win, W, H, width=520, aspect=(4, 5)):
+    """算 4:5 竖构图的裁切框，返回 (x0, y0, cw, ch) 像素整数 + 输出尺寸。
+
+    bb_at  = 切面那一帧的骨架包围盒；bb_win = 整个片段窗口内的包围盒并集。
+    取景同时满足两条：
+      ① 不比只出静态图那会儿（单帧盒 ×1.9）更紧 —— 老报告卡的观感不变；
+      ② 装得下 3 秒里人跑到过的所有位置（并集盒 ×1.12）—— 否则片子里人会被裁掉。
+    实测 3 秒窗口的并集盒比单帧盒高 1.13-1.20 倍（最大 1.59），宽 1.22-1.48 倍
+    （最大 2.50，IMG_6411 的 5.5s）——高度那 1.9 倍余量本来就够，宽度不够，
+    所以下面单独按宽度反算一次 ch。
+    """
+    aw, ah = aspect
+    cx, cy, bw, bh = bb_win
+    ch_for_w = bw * 1.12 * (W / H) * (ah / aw)   # 装下并集宽度所需的 ch
+    ch = min(1.0, max(bb_at[3] * 1.9, bh * 1.12, ch_for_w, 0.34))
+    cw = min(1.0, ch * (aw / ah) * (H / W))
+    x0 = min(max(cx - cw / 2, 0.0), 1.0 - cw)
+    y0 = min(max(cy - ch / 2, 0.0), 1.0 - ch)
+    # 转像素并取偶数：h264 的 yuv420p 要求宽高可被 2 整除
+    px = lambda v, n: max(0, min(int(v * n) // 2 * 2, n))
+    x0p, y0p, cwp, chp = px(x0, W), px(y0, H), px(cw, W), px(ch, H)
+    cwp, chp = min(cwp, W - x0p), min(chp, H - y0p)
+    return x0p, y0p, cwp, chp, width, int(round(width * ah / aw))
+
+
+def grab_shots(video, times, boxes, outdir, tag):
+    """一次顺序解码，同时出静态图和 3 秒片段（切面前 1 后 2）。
+    返回 (jpg列表, mp4列表, 偏移列表)——偏移 = 切面那一帧在片段内的秒数，给 data-t 用。
+
+    ⚠️ **定位必须走 cv2，绝不能让 ffmpeg 自己 -ss 找时刻**（2026-07-17 实测踩过）：
+    本项目素材是 VFR（IMG_6411：r_frame_rate 29.92 / avg_frame_rate 32.61 对不上）。
+    climb_pose.py 的 `time_s = frame_idx / avg_fps` 是**名义时间**，不是真实 PTS；
+    cv2 的 POS_MSEC 走的也是 round(ts*fps)→帧号 这个名义映射，两者对得上，所以
+    metrics 里的时刻和 cv2 抽的帧一直是一致的。但 ffmpeg 的 -ss 走**真实 PTS**——
+    两条时间轴在 VFR 上会漂，实测 IMG_6411 上漂 53-105ms（约 3 帧）且**逐处不同**
+    （1.5s 处 105ms、5.5s 处 53ms），固定偏移糊不过去。先前让 ffmpeg -ss 切片，
+    片段第 1.0s 和 poster 差了整整 3 帧，正是「数字描述的不是读者看到的那一帧」。
+    这里 ffmpeg 只当编码器用，帧由 cv2 按名义时间轴喂进去。
+
+    静态图直接取自片段的同一批帧（第 i_poster 帧），所以 poster 和片段停住时
+    是**同一帧**——靠构造保证，不靠两边取整凑巧一致。
+
+    **用 MP4 不用 GIF**（同日实测，同一 3 秒切片 520x650）：
+      GIF 15fps 3444KB / GIF 10fps 2645KB / 动图 WebP 15fps 593KB / h264 30fps 90KB。
+    GIF 双输——体积是 h264 的 29 倍，画质还更差（128 色 + 抖动，紫墙和衣服一片噪点）。
+
+    ffmpeg 不在就只出静态图（片段列表全 None），报告卡自动退回纯静态，不报错。
+    """
+    import cv2, shutil, subprocess
+    os.makedirs(outdir, exist_ok=True)
+    has_ff = bool(shutil.which("ffmpeg"))
+    cap = cv2.VideoCapture(video)
+    if not cap.isOpened():
+        raise IOError(f"打不开视频: {video}")
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    jpgs, mp4s, offs = [], [], []
+    for i, (ts, bx) in enumerate(zip(times, boxes)):
+        x0, y0, cw, ch, ow, oh = bx
+        start = max(0.0, ts - CLIP_PRE)
+        n_want = int(round((CLIP_PRE + CLIP_POST) * fps))
+        i_poster = int(round((ts - start) * fps))       # 切面在这批帧里的下标
+        # data-t 取**帧中心**而不是 i_poster/fps：第 k 帧占 [k/fps, (k+1)/fps)，
+        # 把 currentTime 设成 k/fps 会因浮点/取整落到第 k-1 帧上——刚好差一帧，
+        # 静止时看到的就不是文案说的那一刻了。
+        offs.append((i_poster + 0.5) / fps)
+        cap.set(cv2.CAP_PROP_POS_MSEC, start * 1000.0)
+
+        proc, jpg_done = None, None
+        for k in range(n_want):
+            ok, f = cap.read()
+            if not ok:
+                break
+            crop = f[y0:y0 + ch, x0:x0 + cw]
+            if crop.size == 0:
+                break
+            crop = cv2.resize(crop, (ow, oh))
+            if k == i_poster:                            # 静态图 = 片段里的这一帧
+                jpg_done = f"{tag}_{i}.jpg"
+                imwrite_unicode(os.path.join(outdir, jpg_done), crop)
+            if has_ff:
+                if proc is None:
+                    cmd = ["ffmpeg", "-v", "error", "-y",
+                           "-f", "rawvideo", "-pix_fmt", "bgr24",
+                           "-s", f"{ow}x{oh}", "-r", f"{fps:.6f}", "-i", "-",
+                           "-an", "-c:v", "libx264", "-crf", str(CLIP_CRF),
+                           "-preset", "slow", "-pix_fmt", "yuv420p",
+                           "-movflags", "+faststart",
+                           os.path.join(outdir, f"{tag}_{i}.mp4")]
+                    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
+                                            stdout=subprocess.DEVNULL,
+                                            stderr=subprocess.PIPE)
+                try:
+                    proc.stdin.write(crop.tobytes())
+                except (BrokenPipeError, OSError):
+                    break
+        jpgs.append(jpg_done)
+        if proc is None:
+            mp4s.append(None)
+            continue
+        try:
+            proc.stdin.close()
+        except OSError:
+            pass
+        proc.wait()
+        out = os.path.join(outdir, f"{tag}_{i}.mp4")
+        # 不静默失败：编码器报错或没落盘就记 None，让上层的计数打印出来
+        mp4s.append(f"{tag}_{i}.mp4" if proc.returncode == 0 and os.path.exists(out)
+                    and os.path.getsize(out) > 0 else None)
+    cap.release()
+    return jpgs, mp4s, offs
 
 
 def main():
@@ -159,16 +280,28 @@ def main():
     def idx_at(ts):
         return int(np.clip(np.searchsorted(t, ts), 0, N - 1))
 
-    def bbox_at(ts):
-        """该时刻骨架的归一化包围盒 (cx, cy, w, h)，注意 y 要换回图像坐标（向下）。"""
-        i = idx_at(ts)
-        xs = np.array([P[j][i, 0] for j in JOINTS])
-        ys = np.array([1.0 - P[j][i, 1] for j in JOINTS])   # 换回图像坐标
+    def _box(sl):
+        """把 P 的一个时间切片压成归一化包围盒 (cx, cy, w, h)，y 换回图像坐标（向下）。"""
+        xs = np.concatenate([P[j][sl, 0] for j in JOINTS])
+        ys = np.concatenate([1.0 - P[j][sl, 1] for j in JOINTS])
         xs, ys = xs[~np.isnan(xs)], ys[~np.isnan(ys)]
         if len(xs) == 0:
             return (0.5, 0.5, 0.3, 0.4)
         return (float((xs.min() + xs.max()) / 2), float((ys.min() + ys.max()) / 2),
                 float(xs.max() - xs.min()), float(ys.max() - ys.min()))
+
+    def bbox_at(ts):
+        """该时刻骨架的归一化包围盒。"""
+        return _box(slice(idx_at(ts), idx_at(ts) + 1))
+
+    def bbox_win(ts):
+        """片段窗口 [ts-1, ts+2] 内骨架包围盒的并集——取景要装得下人跑到过的地方。"""
+        return _box(slice(idx_at(ts - CLIP_PRE), idx_at(ts + CLIP_POST) + 1))
+
+    vw_, vh_ = video_size(A.video)
+
+    def boxes_for(times):
+        return [frame_box(bbox_at(x), bbox_win(x), vw_, vh_) for x in times]
 
     # ── 给 v1 的发力型吃力点补上「当时到底什么在极端」──────────────
     # v1 的 metrics.json 只给了时刻，不给依据，于是 4 张卡文案全一样、毫无信息量。
@@ -298,9 +431,9 @@ def main():
         if c["source"] == "v1":
             c["driver"], c["detail"] = power_detail(c["t"])
     ctimes = [c["t"] for c in crux]
-    cfiles = grab_frames(A.video, ctimes, [bbox_at(x) for x in ctimes], ASSET, "crux")
-    for c, fn in zip(crux, cfiles):
-        c["img"] = fn
+    cfiles, cclips, coffs = grab_shots(A.video, ctimes, boxes_for(ctimes), ASSET, "crux")
+    for c, fn, cl, off in zip(crux, cfiles, cclips, coffs):
+        c["img"], c["clip"], c["clip_t"] = fn, cl, off
 
     # 弯臂段也抽帧（老板要求悬浮预览）：取段内肘角最弯的那一刻，最能说明问题
     bents = v2["bent_arm"]["items"]
@@ -310,9 +443,9 @@ def main():
         with warnings_ignore():
             seg = np.where(np.isnan(eo_g[i0b:i1b + 1]), np.inf, eo_g[i0b:i1b + 1])
         btimes.append(float(t[i0b + int(np.argmin(seg))]) if len(seg) else b["start_s"])
-    bfiles = grab_frames(A.video, btimes, [bbox_at(x) for x in btimes], ASSET, "bent")
-    for b, ts_, fn in zip(bents, btimes, bfiles):
-        b["img"], b["peak_s"] = fn, round(ts_, 2)
+    bfiles, bclips, boffs = grab_shots(A.video, btimes, boxes_for(btimes), ASSET, "bent")
+    for b, ts_, fn, cl, off in zip(bents, btimes, bfiles, bclips, boffs):
+        b["img"], b["clip"], b["clip_t"], b["peak_s"] = fn, cl, off, round(ts_, 2)
 
     # ── SVG 时间线：分三层堆叠 ────────────────────────────────
     # 一开始把分段做成全高色带糊在曲线后面，近黑底 + 18% 透明 = 一片棕色泥浆，
@@ -416,10 +549,31 @@ def main():
                   f'<text x="{x:.1f}" y="{E_BOT+17}" fill="#6b7280" font-size="10" '
                   f'text-anchor="middle" font-family="Space Mono, monospace">{ts}s</text>')
 
+    def shot(img, clip, clip_t):
+        """预览画面。有片段就出 <video>、静态图当 poster；没片段退回 <img>；都没有出空。
+
+        preload="none" + 悬浮才播：一份报告 7-10 个片段，全 autoplay 会同时解码
+        10 路 h264，笔记本风扇直接起飞；而且不悬浮就一个字节都不下，实际流量跟
+        以前的纯静态图持平。播放由页尾那段 JS 接管（HOVER_JS）。
+
+        data-t = 切面那一帧在片段内的秒数（grab_shots 按实际帧号算的，取帧中心）。
+        **不能省**：片段是从切面前 1 秒起头的，鼠标移开时把 currentTime 归零的话，
+        卡片就永久停在比切面早 1 秒的那一帧上，旁边的时刻/角度却还在描述切面——
+        图文对不上。回到 data-t，静止帧才跟 poster、跟文案说的是同一刻。"""
+        if not img:
+            return ""
+        if not clip:
+            return f'<img src="报告卡素材/{img}" alt="" loading="lazy">'
+        return (f'<video src="报告卡素材/{clip}" poster="报告卡素材/{img}" '
+                f'data-t="{clip_t:.4f}" preload="none" muted loop playsinline></video>')
+
     # ── 时间线热区：悬浮浮出当时的画面 ────────────────────────────
-    # 纯 CSS，不上 JS：SVG 的 viewBox→渲染宽度是线性映射（width:100% + height:auto），
+    # 热区定位纯 CSS：SVG 的 viewBox→渲染宽度是线性映射（width:100% + height:auto），
     # 所以按百分比定位的 HTML 热区能和 SVG 里的图元精确对齐（实测 6 个标记偏差 0px）。
-    def hotspot(ts, cls, label, img, width_s=None, top_u=0, bot_u=None):
+    def hotspot(ts, cls, label, img, clip=None, clip_t=0.0, width_s=None,
+                top_u=0, bot_u=None):
+        # clip_t 单独传、不由 ts 推：弯臂段的热区 ts 是**段的起点**，而片段切在段内
+        # 最弯的那一刻（peak_s），两者不是一回事，拿 ts 去推 data-t 会算错。
         """top_u / bot_u 用的是 **SVG 坐标**，这里换算成百分比。
         ⚠️ 不能直接当 CSS px 用：SVG 按容器宽度缩放（实测 1200 → 1122，系数 0.935），
         两套单位对不上，窗口一变宽热区就和图元错位。百分比才跟着一起缩放。"""
@@ -433,9 +587,8 @@ def main():
         align = "l" if xp < 8 else ("r" if xp > 92 else "c")
         w = (f"width:{(x_of(ts + width_s) - x_of(ts)) / VW * 100:.3f}%;transform:none;left:"
              f"{x_of(ts) / VW * 100:.3f}%") if width_s else f"left:{xp:.3f}%"
-        imgtag = f'<img src="报告卡素材/{img}" alt="" loading="lazy">' if img else ""
         return f'''<div class="hot {cls}" style="{w};top:{top_pct:.2f}%;bottom:{bot_pct:.2f}%">
-  <figure class="pop {align}">{imgtag}
+  <figure class="pop {align}">{shot(img, clip, clip_t)}
     <figcaption><b>{label[0]}</b><span>{label[1]}</span></figcaption>
   </figure></div>'''
 
@@ -446,13 +599,14 @@ def main():
         label = ("卡住型 · " if c["source"] == "v2a" else "姿态极端 · ") + kind
         # 难点热区：覆盖高度曲线 + 分段条，不伸到肘角那一行（留给弯臂热区）
         hotspots += hotspot(c["t"], "stuck" if c["source"] == "v2a" else "power",
-                            (f'{c["t"]:.1f}s', label), c.get("img"),
-                            top_u=0, bot_u=SEG_TOP + SEG_H)
+                            (f'{c["t"]:.1f}s', label), c.get("img"), c.get("clip"),
+                            c.get("clip_t", 0.0), top_u=0, bot_u=SEG_TOP + SEG_H)
     # 弯臂段：热区横跨整个区间，只压在肘角那一行，不跟上面的难点竖线抢
     for b in bents:
         hotspots += hotspot(b["start_s"], "bentzone",
                             (f'{b["dur_s"]:.1f}s', f'弯臂耗力 · 最弯 {b["min_elbow_deg"]:.0f}°'),
-                            b.get("img"), width_s=b["end_s"] - b["start_s"],
+                            b.get("img"), b.get("clip"), b.get("clip_t", 0.0),
+                            width_s=b["end_s"] - b["start_s"],
                             top_u=E_TOP - 6, bot_u=E_BOT)
 
     timeline_svg = f'''<svg viewBox="0 0 {VW} {VH}" class="tl">
@@ -487,9 +641,11 @@ def main():
             # 不再叫「发力型 · 动作剧烈」——见上方 v1_terms 的拆解注释。
             # 也去掉了「占 X%」：那是公式内部的分量占比，对读者是黑话（老板看不懂）。
             tag = c["driver"]
-        img = (f'<img src="报告卡素材/{c["img"]}" alt="" loading="lazy">' if c.get("img")
-               else '<div class="ph">[抽帧失败]</div>')
-        return f'''<figure class="crux {cls}">{img}<figcaption>
+        img = (shot(c.get("img"), c.get("clip"), c.get("clip_t", 0.0))
+               or '<div class="ph">[抽帧失败]</div>')
+        # 悬浮才播的东西必须自己说「我能播」，否则跟静态图长得一样，没人会去悬浮
+        hint = '<span class="shot-hint"></span>' if c.get("clip") else ""
+        return f'''<figure class="crux {cls}">{img}{hint}<figcaption>
   <div class="tm">{c["t"]:.1f}<span>s</span></div>
   <div class="tag">{tag}</div>
   <p>{c["detail"]}</p></figcaption></figure>'''
@@ -725,7 +881,8 @@ h2 .cnt{{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:40
 .pop.l{{left:-10px}}
 .pop.r{{right:-10px}}
 .hot:hover .pop{{opacity:1;transform:translateY(0)}}
-.pop img{{width:100%;display:block;aspect-ratio:4/5;object-fit:cover}}
+.pop img,.pop video{{width:100%;display:block;aspect-ratio:4/5;object-fit:cover;
+  background:var(--surface2)}}
 .pop figcaption{{padding:8px 10px;display:flex;flex-direction:column;gap:2px}}
 .pop b{{font-family:var(--mono);font-size:15px;color:var(--ink)}}
 .pop span{{font-size:11px;color:currentColor;font-weight:700}}
@@ -736,7 +893,15 @@ h2 .cnt{{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:40
 .crux{{margin:0;background:var(--surface);border:1px solid var(--line);overflow:hidden;
   transition:border-color .15s ease-out}}
 .crux:hover{{border-color:#3a4150}}
-.crux img{{width:100%;display:block;object-fit:cover}}
+.crux img,.crux video{{width:100%;display:block;object-fit:cover;background:var(--surface2)}}
+/* 悬浮才播，所以得让人知道这里有得播：静止时角上一个小三角，播起来就淡出 */
+.crux{{position:relative}}
+.shot-hint{{position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;
+  background:rgba(12,14,18,.62);backdrop-filter:blur(2px);display:grid;place-items:center;
+  pointer-events:none;transition:opacity .18s;z-index:2}}
+.shot-hint::after{{content:"";border-left:7px solid rgba(255,255,255,.92);
+  border-top:4.5px solid transparent;border-bottom:4.5px solid transparent;margin-left:2px}}
+.crux:hover .shot-hint{{opacity:0}}
 .crux .ph{{display:grid;place-items:center;color:var(--ink3);font-size:12px;aspect-ratio:4/5}}
 .crux figcaption{{padding:14px 16px 16px}}
 .crux .tm{{font-family:var(--mono);font-weight:700;line-height:1;
@@ -873,8 +1038,11 @@ td.empty{{color:var(--ink3)}}
   代价是它看的是相对趋势，不是实验室级的绝对测量。单目对深度不敏感，主要看画面内的运动。
   起攀时刻先用「手举过肩」定位上墙，再算重心——因为走向岩壁时人在往远处走，
   画面里重心会被透视抬高，看着像在爬。
-  阈值都在 climb_report_v2.py 顶部，本次取值见 metrics_v2.json 的 params。</div>
-</div>'''
+  阈值都在 climb_report_v2.py 顶部，本次取值见 metrics_v2.json 的 params。
+  画面是切面前 1 秒到后 2 秒的 3 秒片段，鼠标移上去就播。</div>
+</div>
+
+{HOVER_JS}'''
 
     out_html = os.path.join(A.out, "攀岩报告卡.html")
     with open(out_html, "w", encoding="utf-8") as f:
@@ -884,7 +1052,10 @@ td.empty{{color:var(--ink3)}}
           f" · 净上升 {C['net_gain_bl']:.2f}bl · 检出 {det_rate}")
     print(f"   卡住型 {len(stuck)} 处 · 姿态极端 {len(power)} 处 · 弯臂 {len(bents)} 段"
           f" · 真休息 {v2['rests']['n']} 次")
-    print(f"   抽帧 {sum(1 for x in cfiles + bfiles if x)}/{len(cfiles) + len(bfiles)} 张 → {ASSET}")
+    clips = cclips + bclips
+    mb = sum(os.path.getsize(os.path.join(ASSET, x)) for x in clips if x) / 1048576
+    print(f"   抽帧 {sum(1 for x in cfiles + bfiles if x)}/{len(cfiles) + len(bfiles)} 张"
+          f" · 片段 {sum(1 for x in clips if x)}/{len(clips)} 个（{mb:.2f}MB）→ {ASSET}")
 
 
 if __name__ == "__main__":
