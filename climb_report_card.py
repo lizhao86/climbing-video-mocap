@@ -764,7 +764,17 @@ def main():
         rest_line = "停顿都不到 2 秒，手臂没来得及伸直挂着歇。"
     else:
         rest_head = f"全程休息了 {v2['rests']['n']} 次。"
-        rest_line = f"平均质量 {v2['rests']['mean_quality']}/100。"
+        # 光给「平均质量 60/100」不行——分数得能指回依据（老板的规矩：每句话都要能
+        # 指回一个具体数字）。休息次数少（先锋以外通常 1-2 次），直接逐次把扣分原因说出来。
+        if v2["rests"]["n"] <= 2:
+            parts = []
+            for r in v2["rests"]["items"]:
+                why = "；".join(x.rstrip("(+−)").rstrip("(") for x in r["reasons"]) or "无明显加减分"
+                parts.append(f"{r['start_s']:.1f}–{r['end_s']:.1f} 秒那次 "
+                             f"{r['quality']}/100：{why}")
+            rest_line = "。".join(parts) + "。"
+        else:
+            rest_line = f"平均质量 {v2['rests']['mean_quality']}/100。"
 
     # 行文原则（老板 2026-07-17：「行文能不能简洁，用词简单」）：
     # 短句、常用词、一句话说一件事。不要「——」串下去，不要为了气势加修辞。

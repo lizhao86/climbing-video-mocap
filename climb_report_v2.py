@@ -73,7 +73,19 @@ VIS_GAP_FILL_S = 0.50 # 短于此秒数的"看不见"空洞按线性插值补上
                       # 长于此值的空洞保持 NaN = 真遮挡，不参与判定。
 
 # 休息点质量评分权重（基准分 60，clip 到 0-100）
-Q_BASE, Q_STRAIGHT, Q_FOOT, Q_PRECRUX, Q_BENT, Q_LONG = 60, 15, 10, 15, -25, -15
+# 休息质量分（2026-07-17 重做，见 docs/superpowers/specs/2026-07-17-rest-quality-redesign.md）：
+# - 没有 Q_STRAIGHT：直臂是 is_rest 的**准入门槛**，凡被判休息必满足，再加分就是
+#   人人有份的假分辨率（旧版 60+15+10+15=100 的满分是结构必然——IMG_6411 踩过）。
+# - Q_OTHER_BENT：另一条**可见**（过两道体检）的臂中位肘角 <150° 就扣——弯着的
+#   前臂回不了血。不可见不扣（存疑从宽；右臂有效帧率普遍很低，IMG_6417 仅 3.1%）。
+# - Q_STEEP_HANG：髋-踝落差 <0 = 脚高过髋，重量物理上压不到脚（锁膝是例外，但教材
+#   说「机会不多」且 rule_weak，不为它弯曲主判据）——这是陡壁绷核心的挂姿，不是休息姿势。
+Q_BASE, Q_FOOT, Q_PRECRUX = 75, 10, 15
+Q_OTHER_BENT, Q_STEEP_HANG, Q_BENT, Q_LONG = -20, -10, -25, -15
+GAP_PRESS_LO = 0.0    # 「压脚」加分的 gap 下界(身长)：脚必须低于髋才谈得上把重量压给脚。
+                      # 上界是 FOOT_HIGH。⚠️ 目前全部素材只有 1 个 gap<0 的误判负例、
+                      # 0 个真休息正例——此下界取的是物理硬边界而非数据拟合，
+                      # 等六盘水（唯一含真休息的素材）取数后用真样本回来精调。
 
 JOINTS = ["nose", "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
           "left_wrist", "right_wrist", "left_hip", "right_hip",
@@ -223,13 +235,16 @@ def main():
     a_r[:n_ok] = anat_ok("right")[:n_ok]
     ok_l &= a_l
     ok_r &= a_r
+    # 逐臂的「采信肘角」序列（不可见/解剖学不过 → NaN）。休息质量分要看**另一条臂**
+    # 弯不弯，所以左右得分开留着，不能只留 max。
+    el_ok = np.where(ok_l, el, np.nan)
+    er_ok = np.where(ok_r, er, np.nan)
     # 「最直的那条臂」——只要有一条臂是直的就不算弯臂耗力；看不见的臂不参与取 max
     with np.errstate(all="ignore"):
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)  # 两臂都不可见的帧 → NaN
-            elbow_open = np.nanmax(np.vstack([np.where(ok_l, el, np.nan),
-                                              np.where(ok_r, er, np.nan)]), axis=0)
+            elbow_open = np.nanmax(np.vstack([el_ok, er_ok]), axis=0)
     # 补掉可见度瞬时闪断造成的短空洞，避免连续弯臂段被切碎而漏检
     elbow_open = fill_short_nan(elbow_open, int(VIS_GAP_FILL_S * fps))
     vis_ok = ~np.isnan(elbow_open)
@@ -399,20 +414,45 @@ def main():
                "straight_arm": straight}
         if is_rest:
             gap = float(np.nanmedian(foot_gap[i0:i1]))
-            foot_high = bool(gap < FOOT_HIGH)
+            # 「压脚」是**区间**不是单边阈值：gap ≥ FOOT_HIGH 是平常站姿（不加分），
+            # gap < GAP_PRESS_LO(=0) 是脚高过髋——重量压不到脚，多半是陡壁绷核心的
+            # 挂姿，不但不加分还要扣（IMG_6411 的 gap=-0.21 曾靠旧单边阈值拿到
+            # 「重心压脚(+)」，被老板看出图文不符）。
+            foot_press = bool(GAP_PRESS_LO <= gap < FOOT_HIGH)
+            steep_hang = bool(gap < GAP_PRESS_LO)
+            # 另一条臂：逐臂中位肘角（NaN=该臂整段不可信）。只要有一条**可见**的臂
+            # 中位角是弯的就扣分——is_rest 已保证至少一条直，弯的必是「另一条」。
+            import warnings
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)  # 整段不可见 → nanmedian 全 NaN
+                le_med = float(np.nanmedian(el_ok[i0:i1]))
+                re_med = float(np.nanmedian(er_ok[i0:i1]))
+            arm_meds = [v for v in (le_med, re_med) if not np.isnan(v)]
+            other_bent = (any(v < ELBOW_STRAIGHT for v in arm_meds)
+                          if arm_meds else None)   # None = 两臂都看不清，不扣
             has_bent = bool(bent_mask_all[i0:i1].any())
             too_long = bool(s["dur_s"] > REST_LONG_S)
             pre_crux = any(0 <= c["t"] - s["end_s"] <= REST_BEFORE_CRUX_S for c in crux)
-            q = Q_BASE + (Q_STRAIGHT if straight else 0) + (Q_FOOT if foot_high else 0) \
-                + (Q_PRECRUX if pre_crux else 0) + (Q_BENT if has_bent else 0) \
-                + (Q_LONG if too_long else 0)
+            q = Q_BASE + (Q_FOOT if foot_press else 0) \
+                + (Q_PRECRUX if pre_crux else 0) \
+                + (Q_OTHER_BENT if other_bent else 0) \
+                + (Q_STEEP_HANG if steep_hang else 0) \
+                + (Q_BENT if has_bent else 0) + (Q_LONG if too_long else 0)
             reasons = []
-            if straight: reasons.append("直臂挂着(+)")
-            if foot_high: reasons.append("脚高髋低、重心压脚(+)")
+            if foot_press: reasons.append("脚踩得高、重心压脚(+)")
             if pre_crux: reasons.append("难点前调整(+)")
+            if other_bent:
+                bent_side = "左" if (not np.isnan(le_med) and le_med < ELBOW_STRAIGHT) else "右"
+                bent_deg = le_med if bent_side == "左" else re_med
+                reasons.append(f"另一条胳膊（{bent_side}）弯着 {bent_deg:.0f}°，回不了血(−)")
+            if steep_hang: reasons.append("脚高过髋，重量压不到脚上(−)")
             if has_bent: reasons.append("段内有弯臂耗力(−)")
             if too_long: reasons.append(f"挂了 {s['dur_s']}s 偏久(−)")
-            rec.update({"hip_ankle_gap_bl": round(gap, 2), "foot_high": foot_high,
+            rec.update({"hip_ankle_gap_bl": round(gap, 2), "foot_high": foot_press,
+                        "steep_hang": steep_hang,
+                        "left_elbow_med": round(le_med, 1) if not np.isnan(le_med) else None,
+                        "right_elbow_med": round(re_med, 1) if not np.isnan(re_med) else None,
+                        "other_arm_bent": other_bent,
                         "has_bent_arm": has_bent, "too_long": too_long,
                         "before_crux": pre_crux,
                         "quality": int(np.clip(q, 0, 100)),
@@ -694,7 +734,7 @@ v1 吃力点原始时刻（含起攀前/完攀后）：{v1_crux_all or "（无 v
 
 <h2>休息点质量{f'（均分 {mq}/100）' if mq is not None else ''}</h2>
 <table><tr><th>时段</th><th>时长</th><th>质量分</th><th>加减分依据</th></tr>{rest_rows}</table>
-<div class="note">评分：基准 {Q_BASE}，直臂 +{Q_STRAIGHT}，脚高髋低（髋-踝落差 &lt;{FOOT_HIGH} 身长，重心压在脚上）+{Q_FOOT}，难点前 {REST_BEFORE_CRUX_S}s 内 +{Q_PRECRUX}，段内有弯臂 {Q_BENT}，超过 {REST_LONG_S}s {Q_LONG}。</div>
+<div class="note">评分：基准 {Q_BASE}（直臂是准入门槛，不另加分）。压脚 +{Q_FOOT}（髋-踝落差在 {GAP_PRESS_LO}~{FOOT_HIGH} 身长之间——脚踩得高但仍低于髋，重量才压得到脚上）；难点前 {REST_BEFORE_CRUX_S}s 内 +{Q_PRECRUX}。另一条看得见的胳膊弯着 {Q_OTHER_BENT}；脚高过髋（陡壁绷核心挂着）{Q_STEEP_HANG}；段内有弯臂 {Q_BENT}；超过 {REST_LONG_S}s {Q_LONG}。</div>
 
 <h2>解读 &amp; 建议</h2>{take_html}
 
