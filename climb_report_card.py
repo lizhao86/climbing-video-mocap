@@ -646,12 +646,22 @@ def main():
             tag = c["driver"]
         img = (shot(c.get("img"), c.get("clip"), c.get("clip_t", 0.0))
                or '<div class="ph">[抽帧失败]</div>')
+        # 视觉判定（C 路线）：看过关键帧后的解读，替换几何 detail——眼睛比骨架准，
+        # 且能纠正几何误报（IMG_6411@24.8 的「反复试探」实为连贯掛腳序列）
+        vn = None
+        if REC:
+            for n in (REC.get("crux_notes") or []):
+                if abs(n["t_s"] - c["t"]) < 0.5 and n.get("confidence") != "low":
+                    vn = n["note"]
+                    break
+        detail_html = (f'<p>{vn} <span class="vtag">看过画面</span></p>' if vn
+                       else f'<p>{c["detail"]}</p>')
         # 悬浮才播的东西必须自己说「我能播」，否则跟静态图长得一样，没人会去悬浮
         hint = '<span class="shot-hint"></span>' if c.get("clip") else ""
         return f'''<figure class="crux {cls}">{img}{hint}<figcaption>
   <div class="tm">{c["t"]:.1f}<span>s</span></div>
   <div class="tag">{tag}</div>
-  <p>{c["detail"]}</p></figcaption></figure>'''
+  {detail_html}</figcaption></figure>'''
 
     stuck_cards = "".join(card(c, "stuck") for c in stuck)
     # 「姿态最极端的瞬间」卡片区块 2026-07-18 砍掉：v1 crux 已实锤退化成「关节弯得深」
@@ -946,6 +956,8 @@ h2 .cnt{{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:40
 .crux .tm{{font-family:var(--mono);font-weight:700;line-height:1;
   font-variant-numeric:tabular-nums}}
 .crux .tm span{{font-size:.5em;color:var(--ink3);margin-left:2px}}
+.vtag{{font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--accent);
+  border-radius:3px;padding:1px 5px;margin-left:6px;white-space:nowrap;vertical-align:1px}}
 .crux .tag{{font-size:11px;font-weight:700;margin-top:8px;display:inline-block;
   padding:3px 8px;border-radius:2px}}
 .crux p{{font-size:12.5px;color:var(--ink2);margin:10px 0 0;line-height:1.6}}
