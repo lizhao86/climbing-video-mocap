@@ -651,7 +651,9 @@ def main():
   <p>{c["detail"]}</p></figcaption></figure>'''
 
     stuck_cards = "".join(card(c, "stuck") for c in stuck)
-    power_cards = "".join(card(c, "power") for c in power)
+    # 「姿态最极端的瞬间」卡片区块 2026-07-18 砍掉：v1 crux 已实锤退化成「关节弯得深」
+    # 排序，弯得深≠费力，摆出来只会误导（老板 review + 决策文档）。时间线上的标记保留
+    # （描述性、可悬浮回看画面），只是不再单开区块给它写卡片。
 
     # ── 省力：弯臂段明细 ────────────────────────────────────
     bent_rows = "".join(
@@ -790,16 +792,14 @@ def main():
         takes.append(f"<b>{wb['start_s']:.0f}–{wb['end_s']:.0f} 秒，手臂弯着扛了 "
                      f"{wb['dur_s']:.1f} 秒</b>（平均 {wb['mean_elbow_deg']:.0f}°）。"
                      f"正好是你卡住的那段。想不出下一步时先把手臂伸直挂着，省力。")
-    if pmed > 1.0:
-        takes.append(f"<b>出手前中位停 {pmed:.2f} 秒</b>，偏长。想清楚再动，稳，但费时间。")
-    else:
-        takes.append(f"<b>出手前中位停 {pmed:.2f} 秒</b>，很果断，几乎不犹豫。")
-    eff = v1["efficiency"]
-    if eff >= 0.3:
-        takes.append(f"<b>攀爬效率 {eff*100:.0f}%</b>，不错。多余的横移少。")
-    else:
-        takes.append(f"<b>攀爬效率 {eff*100:.0f}%</b>，偏低：横向走了 {v1['horizontal']:.1f} 身长，"
-                     f"纵向才 {v1['vertical']:.1f}。多在找点试探。出手前先把线读定，能少折返。")
+    # 停顿不再打「果断/犹豫」标签（2026-07-18 决策：21 项研究的系统综述说高手静止
+    # 占比反而更高——停顿被用来主动恢复和看路，把停顿量当坏事报是错的解读框架。
+    # 「攀爬效率」同日砍掉：横移线上直接失真，意义无从解释。见 docs/2026-07-18 决策文档。
+    fl = v2.get("fluency") or {}
+    if fl.get("gie") is not None:
+        takes.append(f"<b>轨迹熵 {fl['gie']:.2f}</b>。重心一共走了 {fl['path_len_bl']:.1f} 身长"
+                     f"（这条线的外框只有 {fl['hull_perim_bl']:.1f}）。数字本身没有好坏——"
+                     f"下次再爬同一条线，这个数降了，就是走得更顺了。")
     arm, leg = v1["left_arm_usage_pct"], v1["left_leg_usage_pct"]
     imb = max(abs(arm - 50), abs(leg - 50))
     if imb >= 10:   # 阈值 12 会漏掉 IMG_6152 的 61/39（偏差 11）——那已经是 1.6 倍差距了
@@ -824,6 +824,9 @@ def main():
         else:
             vd.append("。")
     verdict = "".join(vd)
+    # KPI 第 3 格：流畅度。fluency 缺失（老 json 没重跑）时显示 —，不挡整卡生成
+    _g = (v2.get("fluency") or {}).get("gie")
+    gie_str = f"{_g:.2f}" if _g is not None else '—'
 
     HTML = f'''<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -973,10 +976,10 @@ td.empty{{color:var(--ink3)}}
       <div class="k">完攀用时</div><div class="s">{C['start_s']:.1f} → {C['end_s']:.1f}s</div></div>
     <div class="kpi"><div class="n">{C['net_gain_bl']:.2f}<span class="u">身长</span></div>
       <div class="k">净上升</div><div class="s">起攀点 → 最高点</div></div>
-    <div class="kpi"><div class="n">{v2['prep']['median_s']:.2f}<span class="u">s</span></div>
-      <div class="k">出手前停顿中位数</div><div class="s">共 {v2['prep']['n']} 次出手</div></div>
-    <div class="kpi"><div class="n">{v2['bent_arm']['total_s']:.1f}<span class="u">s</span></div>
-      <div class="k">弯臂耗力</div><div class="s">占攀爬 {v2['bent_arm']['pct_of_climb']:.0f}%</div></div>
+    <div class="kpi"><div class="n">{gie_str}</div>
+      <div class="k">流畅度（轨迹熵）</div><div class="s">越低越顺 · 只跟这条线的自己比</div></div>
+    <div class="kpi"><div class="n">{len(stuck)}<span class="u">处</span></div>
+      <div class="k">卡住的地方</div><div class="s">往下看，最值得回看的时段</div></div>
   </div>
 
   <h2>整条线的节奏<span class="cnt">起攀 {C['start_s']:.1f}s → 完攀 {C['end_s']:.1f}s</span></h2>
@@ -996,13 +999,6 @@ td.empty{{color:var(--ink3)}}
   <h2>卡住的地方<span class="cnt">{len(stuck)} 处 · 最值得回看</span></h2>
   <p class="sub">停顿特别长，或者在同一高度反复出手却上不去。<b>这里是你没想明白怎么走的地方。</b></p>
   <div class="cruxes big">{stuck_cards}</div>
-
-  <h2>姿态最极端的瞬间<span class="cnt">{len(power)} 处 · 仅供参考</span></h2>
-  <p class="sub">全片关节弯得最深、或者动作最急的几个瞬间。每张卡写了哪一项最极端、
-  数值多少、在全片排第几。<br>
-  <b>但极端不等于费力。</b>膝盖弯得深，也可能只是踩得舒服。所以这里只摆事实，不下结论。
-  上面那组「卡住的地方」才是明确要改的。</p>
-  <div class="cruxes small">{power_cards}</div>
 
   <h2>省力<span class="cnt">弯臂 {v2['bent_arm']['n']} 段 · 真休息 {v2['rests']['n']} 次</span></h2>
   <p class="lead">{rest_head}</p>
@@ -1033,11 +1029,14 @@ td.empty{{color:var(--ink3)}}
   <div class="tlbox">{prep_svg}</div>
   <p class="note">每根柱是一次出手前的停顿，柱下是出手时刻和主导肢体。
   绿线是中位数 {pmed:.2f}s，青线是<b>难点线</b>（中位数的 {v2['params']['PREP_CRUX_K']} 倍
-  = {plim:.2f}s）。超过青线的算「卡住型 · 犹豫」。</p>
+  = {plim:.2f}s）。超过青线的算「卡住型 · 犹豫」。
+  <b>停顿本身不是坏事</b>——高手停下来的时间反而更多，用来甩手恢复和看下一步。
+  值得注意的只有超出青线那种量级的停。</p>
 
   <h2>时间去哪了<span class="cnt">起攀 → 完攀 共 {C['climb_time_s']:.1f}s</span></h2>
   <div class="tlbox">{split_svg}</div>
-  <p class="note">「真休息」需同时满足：直臂 + 重心低速 + 持续 &gt;2 秒。其余停顿都算「找点调整」。</p>
+  <p class="note">「真休息」需同时满足：直臂 + 重心低速 + 持续 &gt;2 秒。其余停顿都算「找点调整」。
+  这三个占比没有「应该是多少」的标准——只做记录，不打分。</p>
 
   <h2>解读</h2>
   {take_html}
