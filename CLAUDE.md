@@ -28,6 +28,10 @@
   用 `cv2.imencode` + Python `open(...,'wb')`，并检查返回值。**注意 `cv2.VideoCapture`
   读非 ASCII 路径是正常的**（走 FFmpeg 后端），只有 imwrite/imread 有这个坑。
 - `<base>_recognition.json` 是动作序列的唯一真相文件，rule/vision/manual 三种来源逐级覆写，每段必须带 `source` + `confidence`。
+- **素材里没有正例的判据不上线**（2026-07-18 定，两次实证）：阈值没有正例就无从标定，
+  产出必是误报。GAP_PRESS_LO 只能取物理边界待正例精调；蹲跳/外撐识别试做后因零正例
+  全是误报被砍（外撐 121 个全是宽站/踝认错，蹲跳抽验 3/3 假）。新判据上线前先问：
+  这批素材里有没有它的真样本？没有就等素材，别硬造阈值。
 - 长度/速度统一用 `body_scale`（肩中-髋中距中位数）归一化，与 v1 口径一致。
 - 大文件（视频/PDF/report_assets 图）不入 git，见 .gitignore。
 - **关节角度必须过两道独立体检才采信**（2026-07-17，详见 PLAN.md §8）：① 可见度（该肢体
@@ -102,7 +106,10 @@
 climb_pose.py                              视频 → 3 份 CSV + 标注视频（v1，勿动）
 climb_analyze_report.py                    → metrics.json（v1，勿动；HTML 是没用的副产品）
 climb_segments.py                          → segments.json（S2 分段+换点事件，旋钮在顶部）
-climb_report_v2.py                         → metrics_v2.json（S3 节奏六项，旋钮在顶部）
+climb_report_v2.py                         → metrics_v2.json（S3 节奏六项+流畅度，旋钮在顶部）
+climb_match.py                             → recognition.json（S4 窄版：仅位置/时序可判动作）
+climb_keyframes.py                         卡点关键帧联络表 + 视觉判定协议（S5，协议在 docstring）
+climb_pose_roi.py                          远景素材 ROI 跟踪取数（输出与 climb_pose 同格式）
 climb_report_card.py                       ★展示层：读上面的 json → 唯一那张「攀岩报告卡.html」
 climb_segments_review.py                   审阅视频生成（老板验收用，烧字幕）
 PLAN.md                                    总计划 + 进度看板
