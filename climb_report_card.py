@@ -257,6 +257,9 @@ def main():
     v1 = json.load(open(os.path.join(A.dir, f"{A.base}_metrics.json"), encoding="utf-8"))
     v2 = json.load(open(os.path.join(A.dir, f"{A.base}_metrics_v2.json"), encoding="utf-8"))
     S = json.load(open(os.path.join(A.dir, f"{A.base}_segments.json"), encoding="utf-8"))
+    # 动作识别（climb_match.py 窄版）可选：没跑过就没有这个区块，报告卡照常出
+    rec_path = os.path.join(A.dir, f"{A.base}_recognition.json")
+    REC = json.load(open(rec_path, encoding="utf-8")) if os.path.exists(rec_path) else None
 
     t = col(d2, "time_s")
     N = len(t)
@@ -828,6 +831,29 @@ def main():
     _g = (v2.get("fluency") or {}).get("gie")
     gie_str = f"{_g:.2f}" if _g is not None else '—'
 
+    # ── 动作记录（识别窄版）：只陈列 conf≥medium，不解读——判断留给人。
+    # cross/heel_hook 是 low（左右标签/脚跟点不可靠，抽验有误报），刻意不上卡。
+    moves_html = ""
+    if REC and (REC.get("moves") or REC.get("hand_sequence")):
+        ok_moves = [m for m in REC["moves"] if m["confidence"] in ("high", "medium")
+                    and t0 <= m["t_s"] <= t1]
+        hs = REC.get("hand_sequence") or {}
+        rows_ = "".join(
+            f"<tr><td>{m['t_s']:.1f}s</td><td>{m['name_zh']}</td><td>{m['limb']}</td>"
+            f"<td>{'书 p.' + str(m['book_ref']).split('p.')[-1] if m.get('book_ref') else ''}</td></tr>"
+            for m in ok_moves)
+        seq_line = (f"出手 {hs.get('n_hand_moves', 0)} 次，左右轮流占 "
+                    f"{hs.get('alternating_pct')}%。" if hs.get("n_hand_moves") else "")
+        if ok_moves or seq_line:
+            body = (f"<table><tr><th>时刻</th><th>动作</th><th>肢体</th><th>出处</th></tr>"
+                    f"{rows_}</table>" if ok_moves else
+                    '<p class="sub">这条线上没识别出教材动作（只认位置信号可判的几种）。</p>')
+            moves_html = f'''
+  <h2>动作记录<span class="cnt">{len(ok_moves)} 个 · 只记不评</span></h2>
+  <p class="sub">{seq_line}只列骨架位置信号能可靠判定的动作（高抬脚、两手同点、换手）。
+  侧身、掛旗这类要看朝向的，骨架判不可靠，不硬猜。</p>
+  {body}'''
+
     HTML = f'''<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>攀岩报告卡 · {A.base}</title>
@@ -1024,6 +1050,8 @@ td.empty{{color:var(--ink3)}}
         <span>右腿 {100-v1['left_leg_usage_pct']}%</span></div>
     </div>
   </div>
+
+  {moves_html}
 
   <h2>每次出手前，你停了多久<span class="cnt">中位数 {pmed:.2f}s · 最长 {v2['prep']['max_s']:.2f}s</span></h2>
   <div class="tlbox">{prep_svg}</div>
