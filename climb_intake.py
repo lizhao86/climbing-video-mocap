@@ -213,8 +213,8 @@ def run_pipeline(video_path, roi_args=None):
     with open(sc_path, "w", encoding="utf-8") as f:
         json.dump(sc, f, ensure_ascii=False, indent=2)
 
-    warnings.append("检出率高不代表跟对了人。开 标注视频/ 里的标注视频抽看几帧，"
-                    "确认骨架一直在攀岩者身上（有路人走过会跟错，检出率不会掉）。")
+    warnings.append("检出率高不代表跟对了人。开 数据/%s_annotated.mp4 抽看几帧，"
+                    "确认骨架一直在攀岩者身上（有路人走过会跟错，检出率不会掉）。" % base)
     return {"base": base, "dir": rel_dest, "ok": True,
             "detect_rate": rate, "warnings": warnings}
 
