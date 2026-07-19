@@ -269,13 +269,6 @@ def aggregate(entries, height_m):
                                                   "book_ref": m["book_ref"]})
             slot["n"] += m["n"]
 
-    def grades(es):
-        out = {}
-        for e in es:
-            if e["sent"] is True and e["grade"]:
-                out[e["grade"]] = out.get(e["grade"], 0) + 1
-        return out
-
     best_streak, cur_streak = streak_weeks(dates)
     totals = sums(entries)
     totals.update({
@@ -287,13 +280,11 @@ def aggregate(entries, height_m):
         "honors": honors(entries),
         "places": places(entries),
         "n_unknown_grade": n_unknown_grade(entries),
-        "sent_by_grade": grades(entries),   # 旧字段，Task 8 改完展示层后删
     })
     if height_m:
         totals["total_gain_m"] = round(totals["total_gain_bl"] * height_m, 1)
 
     tm = sums(month_entries)
-    tm["sent_by_grade"] = grades(month_entries)
     tm["honors"] = honors(month_entries)
     if height_m:
         tm["total_gain_m"] = round(tm["total_gain_bl"] * height_m, 1)

@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-climb_journal_card.py —— 旅程账本·展示层（J1，2026-07-18；2026-07-19 加可编辑模式）
+climb_journal_card.py —— 旅程账本·展示层（J1，2026-07-18；2026-07-19 首页重做）
 
 只读 素材/journal.json（climb_journal.py 的产出契约）→ 项目根「攀岩账本.html」。
 改样式只改这里，改口径去 climb_journal.py（分层硬约定）。
 
-两种渲染（同一套页面，账本总览与填写合一）：
-- build_page(j, editable=False)：静态账本（直接双击打开、可分享）
-- build_page(j, editable=True) ：每条记录行内带输入框（难度/完攀/岩馆/线路名/备注）
-  + 身高框 + 保存条，由 climb_journal_edit.py 的本机服务提供，保存写回 sidecar。
+页面是**纯只读**的：上面三行并列（荣誉 / 里程 / 足迹），下面按月分组的线路目录，
+点一条进它的报告卡。元数据（难度/地点/类型）由老板在对话里跟 Claude 说，不在页面填。
 """
 import html
 import json
@@ -121,7 +119,8 @@ def entry_row_static(e, height_m):
         sent = '<span class="sent">完攀 ✓</span>'
     elif e.get("sent") is False:
         sent = '<span class="unsent">未完攀</span>'
-    cells = (_row_head(e) + f'<div class="c-tags">{grade}{sent}</div>'
+    typ = f'<span class="type">{esc(e["type"])}</span>' if e.get("type") else ""
+    cells = (_row_head(e) + f'<div class="c-tags">{typ}{grade}{sent}</div>'
              + _row_stats(e, height_m))
     if e.get("report_card"):
         link = e["report_card"].replace("\\", "/")
@@ -130,147 +129,107 @@ def entry_row_static(e, height_m):
     return f'<div class="row nolink">{cells}<div class="c-go dim">未生成报告卡</div></div>'
 
 
-def entry_row_edit(e, height_m):
-    sent = e.get("sent")
-    sel = {True: "yes", False: "no"}.get(sent, "")
-    go = (f'<div class="c-go"><a href="{esc(e["report_card"].replace(chr(92), "/"))}" '
-          f'target="_blank">看报告卡 →</a></div>'
-          if e.get("report_card") else '<div class="c-go dim">未生成报告卡</div>')
-    inputs = f"""
-  <div class="editgrid">
-    <label>难度<input name="grade" value="{esc(e.get("grade"))}" placeholder="V4 / 5.10b"></label>
-    <label>完攀<select name="sent">
-      <option value="" {"selected" if sel == "" else ""}>未填</option>
-      <option value="yes" {"selected" if sel == "yes" else ""}>完攀 ✓</option>
-      <option value="no" {"selected" if sel == "no" else ""}>没完攀</option>
-    </select></label>
-    <label>岩馆<input name="gym" value="{esc(e.get("gym"))}" placeholder="岩馆名/野外"></label>
-    <label>线路名<input name="route_name" value="{esc(e.get("route_name"))}" placeholder="选填"></label>
-    <label class="wide">备注<input name="note" value="{esc(e.get("note"))}" placeholder="选填"></label>
-  </div>"""
-    return (f'<div class="row edit" data-base="{esc(e["base"])}">'
-            + _row_head(e) + '<div class="c-tags"></div>'
-            + _row_stats(e, height_m) + go + inputs + '</div>')
+def catalog(entries, height_m):
+    """按月分组、日期倒序的记录目录。"""
+    by_month = {}
+    for e in sorted(entries, key=lambda x: (x.get("date") or ""), reverse=True):
+        by_month.setdefault((e.get("date") or "未知日期")[:7], []).append(e)
+    out = []
+    for month, es in by_month.items():
+        rows = "".join(entry_row_static(e, height_m) for e in es)
+        out.append(f'<div class="month"><div class="mhead mono">{esc(month)}'
+                   f'<span class="mcount">{len(es)} 条</span></div>'
+                   f'<div class="rows">{rows}</div></div>')
+    return "".join(out)
 
 
-def build_page(j, editable=False):
+def honor_row(j):
+    """荣誉行：双刻度最高难度 + 各难度完攀数分布 + 本月最难。"""
+    h = j["totals"].get("honors") or {}
+    hm = j.get("this_month", {}).get("honors") or {}
+    cells = []
+    for scale, label in (("V", "抱石最高"), ("YDS", "绳索最高")):
+        s = h.get(scale)
+        cells.append(kpi(s["best_sent"] if s and s["best_sent"] else "—", "", label))
+    month_best = [s["best_sent"] for s in hm.values() if s.get("best_sent")]
+    cells.append(kpi(" / ".join(month_best) if month_best else "—", "", "本月最难"))
+
+    bars = []
+    for scale, label in (("V", "抱石"), ("YDS", "绳索")):
+        s = h.get(scale)
+        if not s or not s["by_grade"]:
+            continue
+        items = sorted(s["by_grade"].items(), key=lambda kv: kv[0])
+        top = max(n for _, n in items)
+        segs = "".join(
+            f'<div class="gbar"><div class="gfill" style="height:{100*n//top}%"></div>'
+            f'<div class="gnum mono">{n}</div><div class="glbl mono">{esc(g)}</div></div>'
+            for g, n in items)
+        bars.append(f'<div class="gblock"><div class="glabel">{label}完攀分布</div>'
+                    f'<div class="gbars">{segs}</div></div>')
+
+    unknown = j["totals"].get("n_unknown_grade") or 0
+    warn = (f'<p class="gwarn">有 {unknown} 条填了难度但认不出格式，未计入榜单。'
+            f'抱石写成 V4，绳索写成 5.10b。</p>') if unknown else ""
+    return (f'<div class="kpis">{"".join(cells)}</div>'
+            f'<div class="gblocks">{"".join(bars)}</div>{warn}')
+
+
+def mileage_row(j):
+    """里程行：累计爬升 / 在墙时长 / 出手次数 / 爬岩天数。"""
     t = j["totals"]
+    gain, gunit = fmt_gain(t.get("total_gain_bl"), j.get("height_m"))
+    hours = round((t.get("total_climb_time_s") or 0) / 3600, 1)
+    return ('<div class="kpis">'
+            + kpi(gain, gunit, "累计爬升")
+            + kpi(f"{hours}", "小时", "在墙时长")
+            + kpi(f'{t.get("total_events") or 0}', "次", "累计出手")
+            + kpi(f'{t.get("n_days") or 0}', "天", "爬岩天数")
+            + '</div>')
+
+
+def footprint_row(j):
+    """足迹行：去过几个地点 + 连续周 + 动作收集。"""
+    t = j["totals"]
+    p = t.get("places") or {"n": 0, "list": []}
+    cells = (kpi(f'{p["n"]}', "个", "去过的地点")
+             + kpi(f'{t.get("streak_weeks_best") or 0}', "周", "最长连续")
+             + kpi(f'{t.get("streak_weeks_current") or 0}', "周", "当前连续"))
+    moves = t.get("moves_collect") or {}
+    mcards = "".join(
+        f'<div class="mcard"><div class="mname">{esc(m["name_zh"])}</div>'
+        f'<div class="mcnt mono">×{m["n"]}</div>'
+        f'<div class="mref mono">{esc(m.get("book_ref") or "")}</div></div>'
+        for m in sorted(moves.values(), key=lambda x: -x["n"]))
+    place_list = ('<p class="plist">' + esc(" · ".join(p["list"])) + '</p>') if p["list"] else ""
+    return f'<div class="kpis">{cells}</div>{place_list}<div class="mcards">{mcards}</div>'
+
+
+def build_page(j):
     height_m = j.get("height_m")
     entries = j["entries"]
 
-    gain, gain_unit = fmt_gain(t["total_gain_bl"], height_m)
-    kpis = "".join([
-        kpi(t["n_routes"], "条", "记录的线路"),
-        kpi(gain, gain_unit, "累计爬升"),
-        kpi(fmt_time(t["total_climb_time_s"]), "", "在墙时间"),
-        kpi(t["total_events"], "次", "累计出手"),
-        kpi(t["n_days"], "天", "攀爬日"),
-    ])
+    hint = ('<p class="hint">难度、地点这些信息在对话里跟 Claude 说一句就记上了，'
+            '不用在这个页面填。</p>')
 
-    badges = [f'最长连续 {t["streak_weeks_best"]} 周']
-    if t["streak_weeks_current"]:
-        badges.append(f'当前连续 {t["streak_weeks_current"]} 周')
-    badges.append(f'本月 {t["n_this_month"]} 条')
-    for grd, n in sorted(t.get("sent_by_grade", {}).items()):
-        badges.append(f'{grd} 完攀 ×{n}')
-    badge_html = "".join(f'<span class="badge">{esc(b)}</span>' for b in badges)
+    honor_html = honor_row(j)
+    mileage_html = mileage_row(j)
+    footprint_html = footprint_row(j)
+    catalog_html = catalog(entries, height_m)
 
-    hint = ""
-    if editable:
-        hint = ('<p class="hint">直接在下面每条记录里填难度、完攀、岩馆，'
-                '身高在页面底部，填完点「保存并更新账本」。不知道的留空没关系。</p>')
-    elif not t.get("sent_by_grade"):
-        hint = ('<p class="hint">双击项目里的 打开账本填写.bat，'
-                '就能在这个页面里直接填每条线的难度和完攀'
-                + ("，填了身高爬升会换算成米。" if not height_m else "。") + '</p>')
-
-    mc = t.get("moves_collect", {})
-    cards = []
-    for mid, name, ref in COLLECT_SET:
-        got = mc.get(mid, {}).get("n", 0)
-        cls = "mcard" if got else "mcard locked"
-        cnt = f'×{got}' if got else "待解锁"
-        cards.append(f'<div class="{cls}"><div class="mname">{esc(name)}</div>'
-                     f'<div class="mcnt mono">{cnt}</div>'
-                     f'<div class="mref mono">{esc(ref)}</div></div>')
-    for mid in sorted(set(mc) - {m[0] for m in COLLECT_SET}):
-        m = mc[mid]
-        cards.append(f'<div class="mcard"><div class="mname">{esc(m["name_zh"])}</div>'
-                     f'<div class="mcnt mono">×{m["n"]}</div>'
-                     f'<div class="mref mono">{esc(m.get("book_ref") or "")}</div></div>')
-    move_html = "".join(cards)
-
-    row_fn = entry_row_edit if editable else entry_row_static
-    rows = "".join(row_fn(e, height_m) for e in reversed(entries))
     n_mtime = sum(1 for e in entries if e.get("date_source") == "mtime")
     foot_note = ("日期带 ? 的按文件时间推断，可在该线的 线路.json 里填写核正。"
                  if n_mtime else "日期读自视频拍摄时间。")
 
-    edit_css = """
-label{font-size:12px;color:var(--ink2);display:flex;flex-direction:column;gap:3px}
-label.wide{grid-column:1/-1}
-input,select{background:var(--surface2);border:1px solid var(--line);color:var(--ink);
-  padding:7px 10px;font-size:14px;font-family:var(--sans);border-radius:4px;width:100%}
-input:focus,select:focus{outline:1px solid var(--accent)}
-.row.edit{cursor:default}
-.editgrid{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
-  border-top:1px dashed var(--line);padding-top:12px;margin-top:4px}
-.savebar{position:fixed;left:0;right:0;bottom:0;background:rgba(12,14,18,.92);
-  border-top:1px solid var(--line);padding:12px 20px;display:flex;gap:16px;
-  align-items:center;justify-content:center;backdrop-filter:blur(6px);z-index:9}
-.savebar label{flex-direction:row;align-items:center;gap:8px;font-size:13px}
-.savebar input{width:90px}
-button{background:var(--accent);color:#14161b;border:0;font-weight:700;font-size:15px;
-  padding:10px 26px;border-radius:4px;cursor:pointer;font-family:var(--sans)}
-button:disabled{opacity:.5;cursor:wait}
-#msg{font-size:13px;color:var(--ink2);max-width:340px}
-.wrap{padding-bottom:140px}
-@media(max-width:720px){.editgrid{grid-template-columns:1fr 1fr}}
-""" if editable else ""
-
-    save_bar = f"""
-<div class="savebar">
-  <label>身高（米）<input id="height" value="{esc(height_m) if height_m else ""}" placeholder="如 1.75"></label>
-  <button id="save">保存并更新账本</button><span id="msg"></span>
-</div>
-<script>
-document.getElementById('save').onclick = async () => {{
-  const btn = document.getElementById('save'), msg = document.getElementById('msg');
-  const entries = Array.from(document.querySelectorAll('.row[data-base]')).map(r => ({{
-    base: r.dataset.base,
-    grade: r.querySelector('[name=grade]').value.trim(),
-    sent: r.querySelector('[name=sent]').value,
-    gym: r.querySelector('[name=gym]').value.trim(),
-    route_name: r.querySelector('[name=route_name]').value.trim(),
-    note: r.querySelector('[name=note]').value.trim(),
-  }}));
-  btn.disabled = true; msg.textContent = '保存中…';
-  try {{
-    const r = await fetch('/save', {{method:'POST',
-      headers:{{'Content-Type':'application/json'}},
-      body: JSON.stringify({{height_m: document.getElementById('height').value.trim(), entries}})}});
-    const d = await r.json();
-    if (!d.ok) throw new Error(d.error || '保存失败');
-    msg.textContent = '已保存，数字更新中…';
-    location.reload();
-  }} catch (e) {{
-    msg.textContent = e.message.includes('fetch')
-      ? '连不上本机服务：这个页面要从「打开账本填写.bat」进来才能保存。'
-      : '出错了：' + e.message;
-    btn.disabled = false;
-  }}
-}};
-</script>""" if editable else ""
-
-    title = "攀岩账本 · 填写" if editable else "攀岩账本"
     return f"""<!DOCTYPE html>
 <html lang="zh"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{title}</title>
+<title>攀岩账本</title>
 <style>
 :root{{
   --bg:#0b0c0f; --surface:#14161b; --surface2:#1b1e25; --line:#262a33;
   --ink:#e9ecf1; --ink2:#a2a9b8; --ink3:#6b7280;
+  --card:#14161b; --chip:#1b1e25; --warn:#d9a441;
   --accent:{C_MOVE}; --rest:{C_REST}; --stuck:{C_STUCK};
   --sans:"Space Grotesk","Microsoft YaHei","PingFang SC",sans-serif;
   --mono:"Space Mono",ui-monospace,monospace;
@@ -328,29 +287,47 @@ a.row:hover{{background:var(--surface2);border-color:var(--ink3)}}
   .row{{grid-template-columns:80px 1fr auto;grid-auto-rows:auto}}
   .row .c-num,.row .c-go{{text-align:left}}
 }}
-{edit_css}
+.secrow{{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:18px 0 28px}}
+.sec{{background:var(--card);border-radius:12px;padding:16px 18px;min-width:0}}
+.sec h2{{margin:0 0 12px;font-size:12px;letter-spacing:.14em;color:var(--ink3)}}
+.sec .kpis{{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}}
+.gblocks{{margin-top:14px}}
+.gblock{{margin-top:10px}}
+.glabel{{font-size:11px;color:var(--ink3);margin-bottom:6px}}
+.gbars{{display:flex;gap:6px;align-items:flex-end;height:56px}}
+.gbar{{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}}
+.gfill{{width:100%;background:var(--accent);border-radius:3px 3px 0 0;min-height:3px}}
+.gnum{{font-size:11px;margin-top:2px}}
+.glbl{{font-size:10px;color:var(--ink3)}}
+.gwarn{{font-size:11px;color:var(--warn);margin:10px 0 0}}
+.plist{{font-size:11px;color:var(--ink3);margin:10px 0 0}}
+.month{{margin-bottom:22px}}
+.mhead{{font-size:12px;color:var(--ink3);padding:0 0 8px;border-bottom:1px solid var(--line)}}
+.mcount{{float:right}}
+.type{{display:inline-block;padding:1px 7px;border-radius:9px;font-size:11px;
+      background:var(--chip);color:var(--ink2);margin-right:5px}}
+@media(max-width:900px){{.secrow{{grid-template-columns:1fr}}}}
 </style></head><body><div class="wrap">
 <div class="eyebrow">CLIMBING JOURNAL · {esc(j.get("generated_at", ""))}</div>
 <h1>攀岩账本</h1>
-<div class="kpis">{kpis}</div>
-<div class="badges">{badge_html}</div>
+<div class="secrow">
+  <section class="sec"><h2>荣誉</h2>{honor_html}</section>
+  <section class="sec"><h2>里程</h2>{mileage_html}</section>
+  <section class="sec"><h2>足迹</h2>{footprint_html}</section>
+</div>
 {hint}
-<h2>动作收集</h2>
-<div class="mcards">{move_html}</div>
-<h2>爬升足迹</h2>
-{timeline_svg(entries, height_m)}
-<h2>线路记录 <span class="mono" style="font-size:11px;color:var(--ink3)">{len(entries)} 条 · 新的在前</span></h2>
-<div class="rows">{rows}</div>
+<h2>线路目录 <span class="mono" style="font-size:11px;color:var(--ink3)">{len(entries)} 条 · 新的在前</span></h2>
+{catalog_html}
 <p class="foot">{foot_note} 点一条记录打开它的报告卡。数字口径：爬升与出手来自骨架计量，
 每条线各自的说明看报告卡。</p>
-</div>{save_bar}</body></html>"""
+</div></body></html>"""
 
 
 def main():
     with open(os.path.join(ROOT, JOURNAL_PATH), encoding="utf-8") as f:
         j = json.load(f)
     with open(os.path.join(ROOT, OUT_PATH), "w", encoding="utf-8") as f:
-        f.write(build_page(j, editable=False))
+        f.write(build_page(j))
     print("攀岩账本.html ← %d 条记录（%s）" % (len(j["entries"]), JOURNAL_PATH))
 
 
