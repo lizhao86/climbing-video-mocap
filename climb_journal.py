@@ -212,6 +212,43 @@ def collect_entry(folder):
     }
 
 
+def honors(entries):
+    """→ {scale: {best_sent, best_sent_rank, by_grade, n_sent, n_attempt}}。
+
+    完攀的才进 best_sent 和 by_grade；没送顶的只算 n_attempt。
+    难度识别不出来的条目整条跳过（它仍进里程/足迹统计）。
+    """
+    out = {}
+    for e in entries:
+        scale, rank = e.get("grade_scale"), e.get("grade_rank")
+        if not scale:
+            continue
+        h = out.setdefault(scale, {"best_sent": None, "best_sent_rank": -1,
+                                   "by_grade": {}, "n_sent": 0, "n_attempt": 0})
+        h["n_attempt"] += 1
+        if e.get("sent") is True:
+            h["n_sent"] += 1
+            g = e["grade"]
+            h["by_grade"][g] = h["by_grade"].get(g, 0) + 1
+            if rank > h["best_sent_rank"]:
+                h["best_sent_rank"] = rank
+                h["best_sent"] = g
+    return out
+
+
+def places(entries):
+    """→ {n, list}。去重、去空、按名排序。"""
+    ps = sorted({(e.get("place") or "").strip()
+                 for e in entries if (e.get("place") or "").strip()})
+    return {"n": len(ps), "list": ps}
+
+
+def n_unknown_grade(entries):
+    """填了难度但识别不出来的条数——账本页要如实标出来，不能装作没有。"""
+    return sum(1 for e in entries
+               if (e.get("grade") or "").strip() and not e.get("grade_scale"))
+
+
 def aggregate(entries, height_m):
     dates = [e["date"] for e in entries if e["date"]]
     this_month = datetime.now().strftime("%Y-%m")
@@ -247,13 +284,17 @@ def aggregate(entries, height_m):
         "streak_weeks_best": best_streak,
         "streak_weeks_current": cur_streak,
         "moves_collect": moves_collect,
-        "sent_by_grade": grades(entries),
+        "honors": honors(entries),
+        "places": places(entries),
+        "n_unknown_grade": n_unknown_grade(entries),
+        "sent_by_grade": grades(entries),   # 旧字段，Task 8 改完展示层后删
     })
     if height_m:
         totals["total_gain_m"] = round(totals["total_gain_bl"] * height_m, 1)
 
     tm = sums(month_entries)
     tm["sent_by_grade"] = grades(month_entries)
+    tm["honors"] = honors(month_entries)
     if height_m:
         tm["total_gain_m"] = round(tm["total_gain_bl"] * height_m, 1)
     return totals, tm
