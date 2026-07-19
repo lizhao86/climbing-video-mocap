@@ -6,6 +6,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import climb_intake as ci
 from climb_intake import video_fingerprint, build_fingerprint_index
 
 
@@ -112,3 +113,64 @@ def test_scan_empty_inbox(tmp_path):
     inbox = tmp_path / "收件箱"
     inbox.mkdir()
     assert scan_inbox(str(inbox), str(tmp_path / "素材")) == []
+
+
+# ---- run_pipeline 的分支逻辑：不碰 mediapipe，把 run_step 换成假的 ----
+
+def test_run_pipeline_stops_after_pose_extraction_failure(tmp_path, monkeypatch):
+    """骨架提取失败要提前返回，后续五步不能被调用。"""
+    monkeypatch.setattr(ci, "ROOT", str(tmp_path))
+    calls = []
+
+    def fake_run_step(args, label):
+        calls.append(label)
+        return False, "骨架提取炸了"
+
+    monkeypatch.setattr(ci, "run_step", fake_run_step)
+    video = tmp_path / "IMG_TEST.MOV"
+    _write(video, b"fake video bytes")
+
+    result = ci.run_pipeline(str(video))
+
+    assert result["ok"] is False
+    assert result["detect_rate"] is None
+    assert calls == ["1/6 骨架提取"]
+    assert "骨架提取失败" in result["warnings"][0]
+
+
+def test_run_pipeline_warns_on_low_detect_rate(tmp_path, monkeypatch):
+    """检出率低于 DETECT_RATE_MIN 且没走 ROI 时要给出改走 ROI 的建议。"""
+    monkeypatch.setattr(ci, "ROOT", str(tmp_path))
+
+    def fake_run_step(args, label):
+        if label == "1/6 骨架提取":
+            return True, "检测到人体的帧: 10/100 (10%)"
+        return False, "后续步骤没跑，随便失败一下好提前结束"
+
+    monkeypatch.setattr(ci, "run_step", fake_run_step)
+    video = tmp_path / "IMG_TEST.MOV"
+    _write(video, b"fake video bytes")
+
+    result = ci.run_pipeline(str(video))
+
+    assert result["detect_rate"] == 10
+    assert any("建议改走 ROI 流程" in w for w in result["warnings"])
+
+
+def test_run_pipeline_roi_skips_low_rate_warning(tmp_path, monkeypatch):
+    """走 ROI 流程时，就算检出率低也不该再建议「改走 ROI」。"""
+    monkeypatch.setattr(ci, "ROOT", str(tmp_path))
+
+    def fake_run_step(args, label):
+        if label == "1/6 骨架提取（ROI 远景版）":
+            return True, "检测到人体的帧: 10/100 (10%)"
+        return False, "后续步骤没跑，随便失败一下好提前结束"
+
+    monkeypatch.setattr(ci, "run_step", fake_run_step)
+    video = tmp_path / "IMG_TEST.MOV"
+    _write(video, b"fake video bytes")
+
+    result = ci.run_pipeline(str(video), roi_args=["--seed", "100,200"])
+
+    assert result["detect_rate"] == 10
+    assert not any("建议改走 ROI 流程" in w for w in result["warnings"])

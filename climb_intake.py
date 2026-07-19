@@ -150,6 +150,8 @@ def run_pipeline(video_path, roi_args=None):
     base = os.path.splitext(os.path.basename(video_path))[0]
     dest = os.path.join(ROOT, MATERIAL_DIR, base)
     data = os.path.join(dest, "数据")
+    # 标注视频/ 这六步不写——它是审阅视频（climb_segments_review.py，未纳入本编排）的
+    # 产物目录，这里先占位建好，免得后来人以为漏了一步。
     for d in (data, os.path.join(dest, "报告卡素材"), os.path.join(dest, "标注视频"),
               os.path.join(data, "v1原始")):
         os.makedirs(d, exist_ok=True)
@@ -233,7 +235,11 @@ def cmd_run(argv):
         roi_args = []
         for flag in ("--seed", "--seed-roi", "--start-s"):
             if flag in argv:
-                roi_args += [flag, argv[argv.index(flag) + 1]]
+                i = argv.index(flag)
+                if i + 1 >= len(argv):
+                    print("%s 后面缺值" % flag)
+                    sys.exit(1)
+                roi_args += [flag, argv[i + 1]]
         if "--seed" not in argv:
             print("--roi 必须同时给 --seed X,Y（首帧攀岩者在全画幅的像素坐标）")
             sys.exit(1)
