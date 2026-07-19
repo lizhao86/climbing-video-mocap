@@ -95,6 +95,31 @@ def resolve_date(sidecar, video_path):
     return None, None
 
 
+# ---------------- 难度双刻度 ----------------
+# 抱石 V 级与绳索 YDS(5.x) 是两套刻度，不能混一个榜。
+# rank 只用于同刻度内排序，跨刻度比较无意义。
+GRADE_V = re.compile(r"^[Vv](\d+)$")
+GRADE_YDS = re.compile(r"^5\.(\d+)([a-dA-D])?$")
+
+
+def parse_grade(grade):
+    """难度字符串 → (scale, rank)。无法识别返回 (None, None)。
+
+    scale ∈ {"V", "YDS"}。rank 是同刻度内的序号，越大越难。
+    YDS 用 数字*4+字母 编码，保证 5.9(36) < 5.10a(40) < 5.10b(41)——
+    字符串排序会把 5.9 排到 5.10a 之后，必须走这里。
+    """
+    g = (grade or "").strip()
+    m = GRADE_V.match(g)
+    if m:
+        return "V", int(m.group(1))
+    m = GRADE_YDS.match(g)
+    if m:
+        letter = (m.group(2) or "a").lower()
+        return "YDS", int(m.group(1)) * 4 + (ord(letter) - ord("a"))
+    return None, None
+
+
 def count_moves(rec):
     """recognition.json → {move_id: {n, name_zh, book_ref}}，只计 conf∈CONF_OK。"""
     out = {}
