@@ -195,12 +195,21 @@ def footprint_row(j):
     cells = (kpi(f'{p["n"]}', "个", "去过的地点")
              + kpi(f'{t.get("streak_weeks_best") or 0}', "周", "最长连续")
              + kpi(f'{t.get("streak_weeks_current") or 0}', "周", "当前连续"))
-    moves = t.get("moves_collect") or {}
-    mcards = "".join(
-        f'<div class="mcard"><div class="mname">{esc(m["name_zh"])}</div>'
-        f'<div class="mcnt mono">×{m["n"]}</div>'
-        f'<div class="mref mono">{esc(m.get("book_ref") or "")}</div></div>'
-        for m in sorted(moves.values(), key=lambda x: -x["n"]))
+    mc = t.get("moves_collect") or {}
+    cards = []
+    for mid, name, ref in COLLECT_SET:
+        got = mc.get(mid, {}).get("n", 0)
+        cls = "mcard" if got else "mcard locked"
+        cnt = f'×{got}' if got else "待解锁"
+        cards.append(f'<div class="{cls}"><div class="mname">{esc(name)}</div>'
+                     f'<div class="mcnt mono">{cnt}</div>'
+                     f'<div class="mref mono">{esc(ref)}</div></div>')
+    for mid in sorted(set(mc) - {m[0] for m in COLLECT_SET}):
+        m = mc[mid]
+        cards.append(f'<div class="mcard"><div class="mname">{esc(m["name_zh"])}</div>'
+                     f'<div class="mcnt mono">×{m["n"]}</div>'
+                     f'<div class="mref mono">{esc(m.get("book_ref") or "")}</div></div>')
+    mcards = "".join(cards)
     place_list = ('<p class="plist">' + esc(" · ".join(p["list"])) + '</p>') if p["list"] else ""
     return f'<div class="kpis">{cells}</div>{place_list}<div class="mcards">{mcards}</div>'
 
@@ -215,6 +224,7 @@ def build_page(j):
     honor_html = honor_row(j)
     mileage_html = mileage_row(j)
     footprint_html = footprint_row(j)
+    timeline_html = timeline_svg(entries, height_m)
     catalog_html = catalog(entries, height_m)
 
     n_mtime = sum(1 for e in entries if e.get("date_source") == "mtime")
@@ -290,7 +300,9 @@ a.row:hover{{background:var(--surface2);border-color:var(--ink3)}}
 .secrow{{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:18px 0 28px}}
 .sec{{background:var(--card);border-radius:12px;padding:16px 18px;min-width:0}}
 .sec h2{{margin:0 0 12px;font-size:12px;letter-spacing:.14em;color:var(--ink3)}}
-.sec .kpis{{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}}
+.sec .kpis{{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
+  background:none;border:0;margin-top:0}}
+.sec .kpi{{background:none;padding:0}}
 .gblocks{{margin-top:14px}}
 .gblock{{margin-top:10px}}
 .glabel{{font-size:11px;color:var(--ink3);margin-bottom:6px}}
@@ -315,6 +327,8 @@ a.row:hover{{background:var(--surface2);border-color:var(--ink3)}}
   <section class="sec"><h2>里程</h2>{mileage_html}</section>
   <section class="sec"><h2>足迹</h2>{footprint_html}</section>
 </div>
+<h2>爬升足迹</h2>
+{timeline_html}
 {hint}
 <h2>线路目录 <span class="mono" style="font-size:11px;color:var(--ink3)">{len(entries)} 条 · 新的在前</span></h2>
 {catalog_html}
