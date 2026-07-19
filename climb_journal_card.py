@@ -239,7 +239,7 @@ def build_page(j):
 :root{{
   --bg:#0b0c0f; --surface:#14161b; --surface2:#1b1e25; --line:#262a33;
   --ink:#e9ecf1; --ink2:#a2a9b8; --ink3:#6b7280;
-  --card:#14161b; --chip:#1b1e25; --warn:#d9a441;
+  --warn:#d9a441;
   --accent:{C_MOVE}; --rest:{C_REST}; --stuck:{C_STUCK};
   --sans:"Space Grotesk","Microsoft YaHei","PingFang SC",sans-serif;
   --mono:"Space Mono",ui-monospace,monospace;
@@ -259,10 +259,6 @@ h2{{font-size:14px;font-weight:700;color:var(--ink2);margin:56px 0 16px;
 .kpi .num{{font-family:var(--mono);font-size:24px;font-weight:700}}
 .kpi .unit{{font-size:12px;color:var(--ink3);margin-left:3px;font-weight:400}}
 .kpi .lbl{{font-size:12px;color:var(--ink3);margin-top:2px}}
-.badges{{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}}
-.badge{{font-family:var(--mono);font-size:12px;color:var(--ink2);
-  background:var(--surface2);border:1px solid var(--line);border-radius:99px;
-  padding:3px 12px}}
 .hint{{font-size:13px;color:var(--ink3);background:var(--surface);
   border:1px dashed var(--line);padding:10px 14px;margin-top:16px}}
 .mcards{{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}}
@@ -298,7 +294,7 @@ a.row:hover{{background:var(--surface2);border-color:var(--ink3)}}
   .row .c-num,.row .c-go{{text-align:left}}
 }}
 .secrow{{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:18px 0 28px}}
-.sec{{background:var(--card);border-radius:12px;padding:16px 18px;min-width:0}}
+.sec{{background:var(--surface);border-radius:12px;padding:16px 18px;min-width:0}}
 .sec h2{{margin:0 0 12px;font-size:12px;letter-spacing:.14em;color:var(--ink3)}}
 .sec .kpis{{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
   background:none;border:0;margin-top:0}}
@@ -317,7 +313,7 @@ a.row:hover{{background:var(--surface2);border-color:var(--ink3)}}
 .mhead{{font-size:12px;color:var(--ink3);padding:0 0 8px;border-bottom:1px solid var(--line)}}
 .mcount{{float:right}}
 .type{{display:inline-block;padding:1px 7px;border-radius:9px;font-size:11px;
-      background:var(--chip);color:var(--ink2);margin-right:5px}}
+      background:var(--surface2);color:var(--ink2);margin-right:5px}}
 @media(max-width:900px){{.secrow{{grid-template-columns:1fr}}}}
 </style></head><body><div class="wrap">
 <div class="eyebrow">CLIMBING JOURNAL · {esc(j.get("generated_at", ""))}</div>
