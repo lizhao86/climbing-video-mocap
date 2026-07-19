@@ -241,6 +241,30 @@ def grab_shots(video, times, boxes, outdir, tag):
     return jpgs, mp4s, offs
 
 
+def sidecar_header(out_dir):
+    """读 <素材文件夹>/线路.json → 返回页眉 HTML。没有 sidecar 就只给返回链接。"""
+    import json as _json
+    path = os.path.join(out_dir, "线路.json")
+    chips = []
+    if os.path.exists(path):
+        try:
+            with open(path, encoding="utf-8") as f:
+                sc = _json.load(f)
+        except (ValueError, OSError):
+            sc = {}
+        for key in ("类型", "难度", "地点", "线路名"):
+            val = (sc.get(key) or "").strip()
+            if val:
+                chips.append(f'<span class="hchip">{val}</span>')
+        if sc.get("完攀") is True:
+            chips.append('<span class="hchip sent">完攀 ✓</span>')
+        elif sc.get("完攀") is False:
+            chips.append('<span class="hchip unsent">未完攀</span>')
+    return ('<div class="cardhead">'
+            '<a class="back" href="../../攀岩账本.html">← 返回账本</a>'
+            f'<div class="hchips">{"".join(chips)}</div></div>')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", required=True)
@@ -822,6 +846,7 @@ def main():
                      f"多找{'右' if p_ > 50 else '左'}{w_}点，两边能匀一些。")
     take_html = "".join(f'<div class="take">{x}</div>' for x in takes)
     route_badge = f' · {A.route}' if A.route else ""
+    card_head = sidecar_header(A.out)
 
     # 开场白只讲这条线上真实发生的事，不外推到「你这个人怎么样」
     vd = [f"<b>{C['climb_time_s']:.1f} 秒</b>完攀，净上升 <b>{C['net_gain_bl']:.2f} 身长</b>。"]
@@ -873,6 +898,7 @@ def main():
 :root{{
   --bg:#0b0c0f; --surface:#14161b; --surface2:#1b1e25; --line:#262a33;
   --ink:#e9ecf1; --ink2:#a2a9b8; --ink3:#6b7280;
+  --chip:#1b1e25; --ok:#2e7d5b;
   --accent:{C_MOVE}; --rest:{C_REST}; --adjust:{C_ADJUST};
   --stuck:{C_STUCK}; --power:{C_POWER};
   --sans:"Space Grotesk","Microsoft YaHei","PingFang SC",sans-serif;
@@ -1002,9 +1028,19 @@ td.empty{{color:var(--ink3)}}
 .take b{{color:var(--ink)}}
 @media(max-width:860px){{.kpis{{grid-template-columns:repeat(2,1fr)}}
   .two{{grid-template-columns:1fr;gap:20px}}}}
+
+.cardhead{{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+          padding:0 0 14px;margin-bottom:10px;border-bottom:1px solid var(--line)}}
+.back{{color:var(--ink3);text-decoration:none;font-size:13px}}
+.back:hover{{color:var(--ink)}}
+.hchips{{display:flex;gap:6px;flex-wrap:wrap}}
+.hchip{{padding:2px 9px;border-radius:10px;font-size:12px;background:var(--chip);color:var(--ink2)}}
+.hchip.sent{{background:var(--ok);color:#fff}}
+.hchip.unsent{{color:var(--ink3)}}
 </style>
 
 <div class="wrap">
+  {card_head}
   <div class="eyebrow"><span class="lat">Climb Report</span>{route_badge}</div>
   <h1>{A.base}</h1>
   <p class="verdict">{verdict}</p>
