@@ -243,13 +243,12 @@ def grab_shots(video, times, boxes, outdir, tag):
 
 def sidecar_header(out_dir):
     """读 <素材文件夹>/线路.json → 返回页眉 HTML。没有 sidecar 就只给返回链接。"""
-    import json as _json
     path = os.path.join(out_dir, "线路.json")
     chips = []
     if os.path.exists(path):
         try:
             with open(path, encoding="utf-8") as f:
-                sc = _json.load(f)
+                sc = json.load(f)
         except (ValueError, OSError):
             sc = {}
         for key in ("类型", "难度", "地点", "线路名"):
