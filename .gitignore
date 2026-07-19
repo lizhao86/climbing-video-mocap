@@ -32,3 +32,7 @@ cases/keyframes/*.png
 
 # 教材页图（版权物+可由 kb_extract_pages.py 重新生成）
 knowledge_base/book_pages/
+
+# 收件箱：临时投放区，视频不入 git，目录本身保留
+收件箱/*
+!收件箱/.gitkeep

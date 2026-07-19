@@ -69,3 +69,46 @@ def test_index_ignores_blank_fingerprint(tmp_path):
     with open(d / "线路.json", "w", encoding="utf-8") as f:
         json.dump({"视频指纹": "", "难度": ""}, f, ensure_ascii=False)
     assert build_fingerprint_index(str(mdir)) == {}
+
+
+from climb_intake import scan_inbox
+
+
+def test_scan_flags_new_and_duplicate(tmp_path):
+    inbox = tmp_path / "收件箱"
+    inbox.mkdir()
+    mdir = tmp_path / "素材"
+
+    # 已入库的一条，指纹取自它的原片
+    old_dir = mdir / "IMG_OLD"
+    old_dir.mkdir(parents=True)
+    _write(old_dir / "IMG_OLD.MOV", b"same content" * 50)
+    fp = video_fingerprint(str(old_dir / "IMG_OLD.MOV"))
+    with open(old_dir / "线路.json", "w", encoding="utf-8") as f:
+        json.dump({"视频指纹": fp, "难度": "V4", "完攀": True,
+                   "地点": "岩时", "日期": "2026-03-29"}, f, ensure_ascii=False)
+
+    # 收件箱：一条重复（改了名）、一条全新
+    _write(inbox / "renamed.MOV", b"same content" * 50)
+    _write(inbox / "IMG_NEW.MOV", b"brand new" * 50)
+
+    got = scan_inbox(str(inbox), str(mdir))
+    by_name = {item["base"]: item for item in got}
+
+    assert by_name["renamed"]["duplicate_of"] == "IMG_OLD"
+    assert by_name["renamed"]["dup_sidecar"]["难度"] == "V4"
+    assert by_name["IMG_NEW"]["duplicate_of"] is None
+
+
+def test_scan_ignores_non_video(tmp_path):
+    inbox = tmp_path / "收件箱"
+    inbox.mkdir()
+    _write(inbox / "readme.txt", b"hello")
+    _write(inbox / ".gitkeep", b"")
+    assert scan_inbox(str(inbox), str(tmp_path / "素材")) == []
+
+
+def test_scan_empty_inbox(tmp_path):
+    inbox = tmp_path / "收件箱"
+    inbox.mkdir()
+    assert scan_inbox(str(inbox), str(tmp_path / "素材")) == []

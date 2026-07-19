@@ -70,3 +70,49 @@ def build_fingerprint_index(material_dir):
             continue
         idx[fp] = {"base": name, "dir": folder, "sidecar": sc}
     return idx
+
+
+def scan_inbox(inbox_dir, material_dir):
+    """→ [{file, base, size_mb, fingerprint, duplicate_of, dup_sidecar}]。
+
+    duplicate_of 是重复命中的素材文件夹名，没命中为 None。
+    """
+    idx = build_fingerprint_index(material_dir)
+    out = []
+    if not os.path.isdir(inbox_dir):
+        return out
+    for name in sorted(os.listdir(inbox_dir)):
+        path = os.path.join(inbox_dir, name)
+        if not os.path.isfile(path):
+            continue
+        if os.path.splitext(name)[1].lower() not in VIDEO_EXTS:
+            continue
+        fp = video_fingerprint(path)
+        hit = idx.get(fp)
+        out.append({
+            "file": path,
+            "base": os.path.splitext(name)[0],
+            "size_mb": round(os.path.getsize(path) / 1024 / 1024, 1),
+            "fingerprint": fp,
+            "duplicate_of": hit["base"] if hit else None,
+            "dup_sidecar": hit["sidecar"] if hit else None,
+        })
+    return out
+
+
+def cmd_scan():
+    items = scan_inbox(os.path.join(ROOT, INBOX_DIR),
+                       os.path.join(ROOT, MATERIAL_DIR))
+    print(json.dumps({"inbox": items}, ensure_ascii=False, indent=2))
+
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] not in ("scan", "run"):
+        print(__doc__)
+        sys.exit(1)
+    if sys.argv[1] == "scan":
+        cmd_scan()
+
+
+if __name__ == "__main__":
+    main()
