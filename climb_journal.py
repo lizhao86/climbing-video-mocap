@@ -31,14 +31,17 @@ REPORT_CARD_NAME = "攀岩报告卡.html"
 VIDEO_EXTS = (".mov", ".mp4", ".MOV", ".MP4")
 
 SIDECAR_TEMPLATE = {
-    "线路名": "",
-    "岩馆": "",
-    "难度": "",
+    "类型": "",          # 抱石 / 顶绳 / 先锋
+    "难度": "",          # 抱石填 V4，绳索填 5.10b
     "完攀": None,
+    "地点": "",          # 岩馆名或野外岩场名
+    "线路名": "",        # 野外才有；室内线路通常没名字
     "日期": "",
     "备注": "",
+    "视频指纹": "",      # climb_intake.py 自动填，判重用
+    "登记时间": "",
 }
-CONFIG_TEMPLATE = {"身高_m": None}
+CONFIG_TEMPLATE = {"身高_m": None, "体重_kg": None}
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -178,6 +181,9 @@ def collect_entry(folder):
     video = find_video(folder)
     date, date_source = resolve_date(sidecar, video)
 
+    grade = (sidecar.get("难度") or "").strip()
+    grade_scale, grade_rank = parse_grade(grade)
+
     comp = mv2.get("completion", {})
     card = os.path.join(folder, REPORT_CARD_NAME)
     card_rel = os.path.relpath(card, ROOT).replace("\\", "/") if os.path.exists(card) else None
@@ -188,8 +194,12 @@ def collect_entry(folder):
         "date": date,
         "date_source": date_source,
         "route_name": (sidecar.get("线路名") or "").strip(),
-        "gym": (sidecar.get("岩馆") or "").strip(),
-        "grade": (sidecar.get("难度") or "").strip(),
+        "place": (sidecar.get("地点") or "").strip(),
+        "type": (sidecar.get("类型") or "").strip(),
+        "grade": grade,
+        "grade_scale": grade_scale,
+        "grade_rank": grade_rank,
+        "fingerprint": (sidecar.get("视频指纹") or "").strip(),
         "sent": sidecar.get("完攀"),
         "note": (sidecar.get("备注") or "").strip(),
         "video_duration_s": mv2.get("video_duration_s"),

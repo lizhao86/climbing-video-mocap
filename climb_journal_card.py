@@ -108,7 +108,7 @@ def _row_head(e):
     date = e.get("date") or "—"
     if e.get("date_source") == "mtime":
         date += '<span class="warn" title="按文件时间推断，可在 线路.json 填写核正">?</span>'
-    gym = esc(e["gym"]) if e.get("gym") else ""
+    gym = esc(e.get("place") or "")
     return (f'<div class="c-date mono">{date}</div>'
             f'<div class="c-name"><b>{esc(name)}</b>'
             f'<span class="sub">{gym}</span></div>')
