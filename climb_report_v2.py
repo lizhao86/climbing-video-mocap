@@ -474,7 +474,7 @@ def main():
             if other_bent:
                 bent_side = "左" if (not np.isnan(le_med) and le_med < ELBOW_STRAIGHT) else "右"
                 bent_deg = le_med if bent_side == "左" else re_med
-                reasons.append(f"另一条胳膊（{bent_side}）弯着 {bent_deg:.0f}°，回不了血(−)")
+                reasons.append(f"另一条臂（{bent_side}）还锁着 {bent_deg:.0f}°，回不了血(−)")
             if steep_hang: reasons.append("脚高过髋，重量压不到脚上(−)")
             if has_bent: reasons.append("段内有弯臂耗力(−)")
             if too_long: reasons.append(f"挂了 {s['dur_s']}s 偏久(−)")

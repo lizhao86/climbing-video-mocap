@@ -681,7 +681,7 @@ def main():
     for c in crux:
         kind = {"hesitation": "犹豫", "repeat": "反复试探",
                 "power": c.get("driver", "姿态极端")}[c["kind"]]
-        label = ("卡住型 · " if c["source"] == "v2a" else "姿态极端 · ") + kind
+        label = ("卡点 · " if c["source"] == "v2a" else "姿态极端 · ") + kind
         # 难点热区：覆盖高度曲线 + 分段条，不伸到肘角那一行（留给弯臂热区）
         hotspots += hotspot(c["t"], "stuck" if c["source"] == "v2a" else "power",
                             (f'{c["t"]:.1f}s', label), c.get("img"), c.get("clip"),
@@ -689,7 +689,7 @@ def main():
     # 弯臂段：热区横跨整个区间，只压在肘角那一行，不跟上面的难点竖线抢
     for b in bents:
         hotspots += hotspot(b["start_s"], "bentzone",
-                            (f'{b["dur_s"]:.1f}s', f'弯臂耗力 · 最弯 {b["min_elbow_deg"]:.0f}°'),
+                            (f'{b["dur_s"]:.1f}s', f'锁臂耗力 · 最弯 {b["min_elbow_deg"]:.0f}°'),
                             b.get("img"), b.get("clip"), b.get("clip_t", 0.0),
                             width_s=b["end_s"] - b["start_s"],
                             top_u=E_TOP - 6, bot_u=E_BOT)
@@ -721,7 +721,7 @@ def main():
     # 发力型是体力开销的记录，压成紧凑一排即可。
     def card(c, cls):
         if c["source"] == "v2a":
-            tag = "卡住型 · " + {"hesitation": "犹豫", "repeat": "反复试探"}[c["kind"]]
+            tag = "卡点 · " + {"hesitation": "起手前久停", "repeat": "原地反复出手"}[c["kind"]]
         else:
             # 不再叫「发力型 · 动作剧烈」——见上方 v1_terms 的拆解注释。
             # 也去掉了「占 X%」：那是公式内部的分量占比，对读者是黑话（老板看不懂）。
@@ -758,7 +758,7 @@ def main():
         f'<td class="mono">{b["dur_s"]:.1f}s</td>'
         f'<td class="mono">{b["min_elbow_deg"]:.0f}°</td>'
         f'<td class="mono">{b["mean_elbow_deg"]:.0f}°</td></tr>'
-        for b in bents) or '<tr><td colspan="4" class="empty">全程没有持续弯臂——省力习惯不错</td></tr>'
+        for b in bents) or '<tr><td colspan="4" class="empty">全程没有持续锁臂，前臂省下来了</td></tr>'
 
     # ── 节奏细节：切换耗时条形图（SVG）──────────────────────
     preps = v2["prep"]["items"]
@@ -809,7 +809,7 @@ def main():
     xacc, split = 0.0, ""
     # 条内的百分比字色随底色走：琥珀/绿够亮，压深色字才看得清；石板灰上必须用亮字
     for lab, key, c_, ink in [("出手爬升", "move_s", C_MOVE, "#0b0c0f"),
-                              ("真休息", "rest_s", C_REST, "#0b0c0f"),
+                              ("回血", "rest_s", C_REST, "#0b0c0f"),
                               ("找点调整", "adjust_s", C_ADJUST, "#e9ecf1")]:
         secs = R[key]
         if secs <= 0:
@@ -856,19 +856,17 @@ def main():
     # 移动中一直弯着也算。
     n_bent = v2["bent_arm"]["n"]
     if IS_ROPE:
-        arm_h2 = "手臂省力了吗"
-        arm_cnt = (f"弯着扛 {n_bent} 段 · 挂着歇 {v2['rests']['n']} 次"
-                   if n_bent else f"挂着歇 {v2['rests']['n']} 次")
+        arm_h2 = "锁臂与回血"
+        arm_cnt = (f"锁臂 {n_bent} 段 · 回血 {v2['rests']['n']} 次"
+                   if n_bent else f"回血 {v2['rests']['n']} 次")
     else:
-        arm_h2 = "手臂伸直了吗"
-        arm_cnt = f"弯着扛 {n_bent} 段" if n_bent else "全程没有弯着扛的段落"
-    arm_def = ("胳膊伸直的时候，体重挂在骨头上，几乎不费力；弯着就得靠肌肉一直扛。"
-               "下面看你有多少时间在扛。")
-    split_note = ("「真休息」需同时满足：直臂 + 重心低速 + 持续 &gt;2 秒。"
-                  "其余停顿都算「找点调整」。"
+        arm_h2 = "锁臂时间"
+        arm_cnt = f"锁臂 {n_bent} 段" if n_bent else "全程没有持续锁臂"
+    split_note = ("算一次<b>回血</b>要同时满足：直臂 + 重心低速 + 持续 &gt;2 秒。"
+                  "其余停顿都算找点。"
                   if IS_ROPE else
-                  "抱石线上「真休息」恒为 0——一条线几十秒，不会出现挂着歇，"
-                  "这不是没做到。停顿都归在「找点调整」里。")
+                  "抱石线上<b>回血恒为 0</b>——一条线几十秒，不会有直臂甩手的机会，"
+                  "这不是没做到。停顿都归在找点里。")
 
     # rest_head 只放**测到的事实**，不放概括。
     # 2026-07-20 删掉了「长停顿在憋，短停顿不」——那是个对仗病句（省了主谓，没人看得懂），
@@ -877,50 +875,50 @@ def main():
     # 「聚合判定 ≠ 逐个都成立」这条规矩。要说相关性就得先算，不算就只陈列。
     rest_bullets = []
     if not IS_ROPE:
-        # 抱石：只回答「停下来的时候手臂憋着没有」
+        # 抱石：只回答「停下来的时候有没有锁着」
         if bent_segs and straight_segs:
             longest = max(bent_segs, key=lambda s: s["dur_s"])
             sm = [s["elbow_open_med"] for s in straight_segs]
             rest_head = f"你一共停了 {len(stat_segs)} 次。"
             rest_bullets = [
-                f"<b>{len(bent_segs)} 次手臂弯着扛</b>——最长 {longest['dur_s']:.1f} 秒，"
+                f"<b>{len(bent_segs)} 次锁着臂</b>——最长 {longest['dur_s']:.1f} 秒，"
                 f"肘角 {longest['elbow_open_med']:.0f}°",
-                f"<b>{len(straight_segs)} 次手臂基本是直的</b>——"
-                f"{min(sm):.0f}–{max(sm):.0f}°，那几次不费力",
+                f"<b>{len(straight_segs)} 次直臂</b>——"
+                f"{min(sm):.0f}–{max(sm):.0f}°，那几次不吃前臂",
             ]
         elif bent_segs:
             longest = max(bent_segs, key=lambda s: s["dur_s"])
-            rest_head = f"你停的 {len(bent_segs)} 次，手臂都弯着。"
+            rest_head = f"你停的 {len(bent_segs)} 次全在锁臂。"
             rest_bullets = [
                 f"最长一次 <b>{longest['dur_s']:.1f} 秒</b>，肘角 {longest['elbow_open_med']:.0f}°",
-                "想不出下一步时先把手臂伸直挂着，重量落到骨头上就不费力",
+                "想 beta 的时候先把手臂放直，重量落到骨头上，前臂能省下来",
             ]
         elif straight_segs:
             sm = [s["elbow_open_med"] for s in straight_segs]
-            rest_head = f"你停的 {len(straight_segs)} 次，手臂都是直的。"
-            rest_bullets = [f"肘角都在 {min(sm):.0f}–{max(sm):.0f}°，没有憋着扛的段落"]
+            rest_head = f"你停的 {len(straight_segs)} 次都是直臂。"
+            rest_bullets = [f"肘角都在 {min(sm):.0f}–{max(sm):.0f}°，全程没有持续锁臂"]
         else:
             rest_head = "没测到值得说的停顿。"
             rest_bullets = ["要么没停，要么停的那几次肘角不够可信，没参与判定"]
     elif v2["rests"]["n"] == 0 and bent_segs and straight_segs:
-        # 「最长」必须从**弯着的那几次**里取，不能从所有停顿里取——否则会拿一个
-        # 手臂其实伸直的长停顿去佐证"弯着扛"
+        # 「最长」必须从**锁着的那几次**里取，不能从所有停顿里取——否则会拿一个
+        # 手臂其实是直的长停顿去佐证"在锁臂"
         longest = max(bent_segs, key=lambda s: s["dur_s"])
         sm = [s["elbow_open_med"] for s in straight_segs]
-        rest_head = f"你一共停了 {len(stat_segs)} 次，没有一次算真休息。"
+        rest_head = f"你一共停了 {len(stat_segs)} 次，一次回血都没有。"
         rest_bullets = [
-            f"<b>{len(bent_segs)} 次手臂弯着扛</b>——最长 {longest['dur_s']:.1f} 秒，"
+            f"<b>{len(bent_segs)} 次锁着臂</b>——最长 {longest['dur_s']:.1f} 秒，"
             f"肘角 {longest['elbow_open_med']:.0f}°",
-            f"<b>{len(straight_segs)} 次手臂基本是直的</b>——{min(sm):.0f}–{max(sm):.0f}°，"
+            f"<b>{len(straight_segs)} 次直臂</b>——{min(sm):.0f}–{max(sm):.0f}°，"
             f"但都不到 2 秒",
-            "真休息要伸直挂着超过 2 秒才算",
+            "算一次回血要直臂挂满 2 秒",
         ]
     elif v2["rests"]["n"] == 0 and bent_segs:
-        rest_head = f"你停的 {len(bent_segs)} 次，手臂都在扛。"
-        rest_bullets = ["没有一次伸直挂着超过 2 秒，所以没有真休息"]
+        rest_head = f"你停的 {len(bent_segs)} 次全在锁臂。"
+        rest_bullets = ["没有一次直臂挂满 2 秒，所以一次回血都没有"]
     elif v2["rests"]["n"] == 0:
-        rest_head = "没有一次算真休息。"
-        rest_bullets = ["停顿都不到 2 秒，手臂没来得及伸直挂着歇"]
+        rest_head = "一次回血都没有。"
+        rest_bullets = ["停顿都不到 2 秒，来不及放直手臂甩一甩"]
     else:
         rest_head = f"全程休息了 {v2['rests']['n']} 次。"
         # 光给「平均质量 60/100」不行——分数得能指回依据（老板的规矩：每句话都要能
@@ -947,9 +945,9 @@ def main():
         takes.append("<b>全程没卡壳。</b>没有特别长的停顿，也没在同一高度反复试探。")
     if v2["bent_arm"]["n"]:
         wb = max(bents, key=lambda b: b["dur_s"])
-        takes.append(f"<b>{wb['start_s']:.0f}–{wb['end_s']:.0f} 秒，手臂弯着扛了 "
+        takes.append(f"<b>{wb['start_s']:.0f}–{wb['end_s']:.0f} 秒锁臂 "
                      f"{wb['dur_s']:.1f} 秒</b>（平均 {wb['mean_elbow_deg']:.0f}°）。"
-                     f"正好是你卡住的那段。想不出下一步时先把手臂伸直挂着，省力。")
+                     f"正好是卡点那一段。想 beta 的时候先把手臂放直，前臂能省下来。")
     # 停顿不再打「果断/犹豫」标签（2026-07-18 决策：21 项研究的系统综述说高手静止
     # 占比反而更高——停顿被用来主动恢复和看路，把停顿量当坏事报是错的解读框架。
     # 「攀爬效率」同日砍掉：横移线上直接失真，意义无从解释。见 docs/2026-07-18 决策文档。
@@ -979,7 +977,7 @@ def main():
         f"阈值在 climb_report_v2.py 顶部，本次取值见 metrics_v2.json 的 params。"))
 
     h2_stuck = sec_h2(
-        "卡住的地方", f"{len(stuck)} 处",
+        "卡点", f"{len(stuck)} 处",
         "两种情况会被标出来：起手前停顿超过中位数的 "
         f"{v2['params']['PREP_CRUX_K']} 倍，或者在同一高度反复出手却没上升。"
         "<b>画面鼠标移上去会播</b>，是该时刻前 1 秒到后 2 秒的片段。")
@@ -989,9 +987,9 @@ def main():
         "<b>鼠标扫过顶部的三角能看到那一刻的画面。</b>")
     h2_arm = sec_h2(
         arm_h2, arm_cnt,
-        "胳膊伸直时体重挂在骨头上，几乎不费力；弯着就得靠肌肉一直扛。"
-        "两条胳膊只要有一条是直的就不费力，所以只看比较直的那条。"
-        "连续弯着超过 2 秒才记一段——<b>移动过程中一直弯着也算</b>，不限于停下来的时候。"
+        "<b>直臂</b>时体重挂在骨头上，前臂几乎不出力；<b>锁臂</b>就得靠肌肉一直拉住，"
+        "很吃前臂。两条臂只要有一条是直的就不算锁，所以只看比较直的那条。"
+        "连续锁满 2 秒才记一段——<b>移动途中一直锁着也算</b>，不限于停下来的时候。"
         f"肘角靠单目猜 3D，不太准：只有 {elbow_valid_pct:.0f}% 的帧够可信，其余不参与判定。"
         "朝镜头方向弯的手臂，画面上看着也是直的，分不出来。")
     h2_balance = sec_h2(
@@ -1004,7 +1002,7 @@ def main():
         "出手前的停顿", f"中位数 {pmed:.2f}s · 最长 {v2['prep']['max_s']:.2f}s",
         "每根柱是一次出手前的停顿，柱下是出手时刻和主导肢体。"
         f"绿线是中位数 {pmed:.2f}s，青线是难点线（中位数的 "
-        f"{v2['params']['PREP_CRUX_K']} 倍 = {plim:.2f}s），超过青线的算「卡住型 · 犹豫」。"
+        f"{v2['params']['PREP_CRUX_K']} 倍 = {plim:.2f}s），超过青线的算「卡点 · 起手前久停」。"
         "<b>停顿本身不是坏事</b>——高手停下来的时间反而更多，用来甩手恢复和看下一步。"
         "值得注意的只有超出青线那个量级的停。", minor=True)
     h2_split = sec_h2(
@@ -1022,7 +1020,7 @@ def main():
               and b["start_s"] < max(c["t"] for c in stuck)] if bents else []
         if ov:
             # 「其中 X 秒」而不是「一直」——弯臂只占卡住窗口的一部分，别夸大
-            vd.append(f"，其中 <b>{sum(b['dur_s'] for b in ov):.1f} 秒</b>手臂弯着扛。")
+            vd.append(f"，其中 <b>{sum(b['dur_s'] for b in ov):.1f} 秒</b>在锁臂。")
         else:
             vd.append("。")
     verdict = "".join(vd)
@@ -1325,7 +1323,7 @@ td.empty{{color:var(--ink3)}}
     <div class="kpi"><div class="n">{gie_str}</div>
       <div class="k">流畅度（轨迹熵）</div><div class="s">越低越顺 · 只跟这条线的自己比</div></div>
     <div class="kpi"><div class="n">{len(stuck)}<span class="u">处</span></div>
-      <div class="k">卡住的地方</div><div class="s">往下看，最值得回看的时段</div></div>
+      <div class="k">卡点</div><div class="s">最值得回看的时段</div></div>
   </div>
 
   {h2_stuck}
@@ -1336,10 +1334,10 @@ td.empty{{color:var(--ink3)}}
     <div class="tlwrap">{timeline_svg}{hotspots}</div>
     <div class="legend">
       <span><i style="background:{C_MOVE}"></i>出手移动</span>
-      <span><i style="background:{C_REST}"></i>真休息</span>
-      <span><i style="background:{C_ADJUST}"></i>找点调整</span>
-      <span><i style="background:{C_STUCK}"></i>卡住型难点</span>
-      <span><i style="background:{C_POWER}"></i>发力型吃力点 / 弯臂段</span>
+      <span><i style="background:{C_REST}"></i>回血</span>
+      <span><i style="background:{C_ADJUST}"></i>找点</span>
+      <span><i style="background:{C_STUCK}"></i>卡点</span>
+      <span><i style="background:{C_POWER}"></i>发力点 / 锁臂段</span>
     </div>
   </div>
 
@@ -1349,7 +1347,7 @@ td.empty{{color:var(--ink3)}}
   <p class="lead">{rest_head}</p>
   {rest_facts}
   <table>
-    <tr><th>弯着扛的时段</th><th>持续</th><th>最弯</th><th>平均</th></tr>{bent_rows}
+    <tr><th>锁臂时段</th><th>持续</th><th>最弯</th><th>平均</th></tr>{bent_rows}
   </table>
 
   {h2_balance}
