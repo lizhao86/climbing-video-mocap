@@ -845,59 +845,71 @@ def main():
                   "抱石线上「真休息」恒为 0——一条线几十秒，不会出现挂着歇，"
                   "这不是没做到。停顿都归在「找点调整」里。")
 
+    # rest_head 只放**测到的事实**，不放概括。
+    # 2026-07-20 删掉了「长停顿在憋，短停顿不」——那是个对仗病句（省了主谓，没人看得懂），
+    # 而且代码从没比较过两组的时长，「长的在憋」是脑补的因果。同一个错误 2026-07-17
+    # 犯过一次（把「没检测到直臂休息」外推成「停顿全在弯着扛」），CLAUDE.md 为此立了
+    # 「聚合判定 ≠ 逐个都成立」这条规矩。要说相关性就得先算，不算就只陈列。
+    rest_bullets = []
     if not IS_ROPE:
         # 抱石：只回答「停下来的时候手臂憋着没有」
         if bent_segs and straight_segs:
             longest = max(bent_segs, key=lambda s: s["dur_s"])
             sm = [s["elbow_open_med"] for s in straight_segs]
-            rest_head = "长停顿在憋，短停顿不。"
-            rest_line = (f"你一共停了 {len(stat_segs)} 次。{len(bent_segs)} 次手臂弯着扛"
-                         f"（最长 {longest['dur_s']:.1f} 秒，肘角 {longest['elbow_open_med']:.0f}°）；"
-                         f"另外 {len(straight_segs)} 次手臂基本是直的"
-                         f"（{min(sm):.0f}–{max(sm):.0f}°），那几次不费力。")
+            rest_head = f"你一共停了 {len(stat_segs)} 次。"
+            rest_bullets = [
+                f"<b>{len(bent_segs)} 次手臂弯着扛</b>——最长 {longest['dur_s']:.1f} 秒，"
+                f"肘角 {longest['elbow_open_med']:.0f}°",
+                f"<b>{len(straight_segs)} 次手臂基本是直的</b>——"
+                f"{min(sm):.0f}–{max(sm):.0f}°，那几次不费力",
+            ]
         elif bent_segs:
             longest = max(bent_segs, key=lambda s: s["dur_s"])
-            rest_head = "停下来的时候手臂都弯着。"
-            rest_line = (f"{len(bent_segs)} 次停顿全在憋，最长一次 {longest['dur_s']:.1f} 秒"
-                         f"（肘角 {longest['elbow_open_med']:.0f}°）。想不出下一步时先把手臂"
-                         f"伸直挂着，重量落到骨头上就不费力。")
+            rest_head = f"你停的 {len(bent_segs)} 次，手臂都弯着。"
+            rest_bullets = [
+                f"最长一次 <b>{longest['dur_s']:.1f} 秒</b>，肘角 {longest['elbow_open_med']:.0f}°",
+                "想不出下一步时先把手臂伸直挂着，重量落到骨头上就不费力",
+            ]
         elif straight_segs:
             sm = [s["elbow_open_med"] for s in straight_segs]
-            rest_head = "停顿时手臂都是直的。"
-            rest_line = (f"{len(straight_segs)} 次停顿肘角都在 {min(sm):.0f}–{max(sm):.0f}°，"
-                         f"没有憋着扛的段落。")
+            rest_head = f"你停的 {len(straight_segs)} 次，手臂都是直的。"
+            rest_bullets = [f"肘角都在 {min(sm):.0f}–{max(sm):.0f}°，没有憋着扛的段落"]
         else:
             rest_head = "没测到值得说的停顿。"
-            rest_line = "要么没停，要么停的那几次肘角不够可信，没参与判定。"
+            rest_bullets = ["要么没停，要么停的那几次肘角不够可信，没参与判定"]
     elif v2["rests"]["n"] == 0 and bent_segs and straight_segs:
         # 「最长」必须从**弯着的那几次**里取，不能从所有停顿里取——否则会拿一个
         # 手臂其实伸直的长停顿去佐证"弯着扛"
         longest = max(bent_segs, key=lambda s: s["dur_s"])
         sm = [s["elbow_open_med"] for s in straight_segs]
-        rest_head = "长停顿在扛，短停顿不。"
-        rest_line = (f"你一共停了 {len(stat_segs)} 次。{len(bent_segs)} 次手臂弯着扛"
-                     f"（最长 {longest['dur_s']:.1f} 秒，肘角 {longest['elbow_open_med']:.0f}°）；"
-                     f"{len(straight_segs)} 次手臂基本是直的（{min(sm):.0f}–{max(sm):.0f}°），"
-                     f"但都不到 2 秒。<b>没有一次算真休息</b>：真休息要伸直挂着超过 2 秒。")
+        rest_head = f"你一共停了 {len(stat_segs)} 次，没有一次算真休息。"
+        rest_bullets = [
+            f"<b>{len(bent_segs)} 次手臂弯着扛</b>——最长 {longest['dur_s']:.1f} 秒，"
+            f"肘角 {longest['elbow_open_med']:.0f}°",
+            f"<b>{len(straight_segs)} 次手臂基本是直的</b>——{min(sm):.0f}–{max(sm):.0f}°，"
+            f"但都不到 2 秒",
+            "真休息要伸直挂着超过 2 秒才算",
+        ]
     elif v2["rests"]["n"] == 0 and bent_segs:
-        rest_head = "停下来的时候手臂都弯着。"
-        rest_line = (f"{len(bent_segs)} 次停顿手臂都在扛，没有一次伸直挂着超过 2 秒。")
+        rest_head = f"你停的 {len(bent_segs)} 次，手臂都在扛。"
+        rest_bullets = ["没有一次伸直挂着超过 2 秒，所以没有真休息"]
     elif v2["rests"]["n"] == 0:
         rest_head = "没有一次算真休息。"
-        rest_line = "停顿都不到 2 秒，手臂没来得及伸直挂着歇。"
+        rest_bullets = ["停顿都不到 2 秒，手臂没来得及伸直挂着歇"]
     else:
         rest_head = f"全程休息了 {v2['rests']['n']} 次。"
         # 光给「平均质量 60/100」不行——分数得能指回依据（老板的规矩：每句话都要能
         # 指回一个具体数字）。休息次数少（先锋以外通常 1-2 次），直接逐次把扣分原因说出来。
-        if v2["rests"]["n"] <= 2:
-            parts = []
+        if v2["rests"]["n"] <= 4:
             for r in v2["rests"]["items"]:
                 why = "；".join(x.rstrip("(+−)").rstrip("(") for x in r["reasons"]) or "无明显加减分"
-                parts.append(f"{r['start_s']:.1f}–{r['end_s']:.1f} 秒那次 "
-                             f"{r['quality']}/100：{why}")
-            rest_line = "。".join(parts) + "。"
+                rest_bullets.append(f"<b>{r['start_s']:.1f}–{r['end_s']:.1f} 秒</b>那次 "
+                                    f"{r['quality']}/100——{why}")
         else:
-            rest_line = f"平均质量 {v2['rests']['mean_quality']}/100。"
+            rest_bullets = [f"平均质量 {v2['rests']['mean_quality']}/100"]
+    rest_facts = ("<ul class=\"facts\">"
+                  + "".join(f"<li>{x}</li>" for x in rest_bullets)
+                  + "</ul>") if rest_bullets else ""
 
     # 行文原则（老板 2026-07-17：「行文能不能简洁，用词简单」）：
     # 短句、常用词、一句话说一件事。不要「——」串下去，不要为了气势加修辞。
@@ -1154,7 +1166,14 @@ h2.minor .cnt{{letter-spacing:.06em}}
 .sub{{font-size:13px;color:var(--ink2);margin:0 0 12px;max-width:76ch;line-height:1.75}}
 .sub b{{color:var(--ink)}}
 /* 结论先行：一句话的答案，比下面的解释大一号 */
-.lead{{font-size:17px;font-weight:700;color:var(--ink);margin:0 0 8px}}
+.lead{{font-size:18px;font-weight:700;color:var(--ink);margin:0 0 4px}}
+/* 事实清单：一条一件事，不串成长句 */
+.facts{{list-style:none;padding:0;margin:14px 0 0;max-width:70ch}}
+.facts li{{position:relative;padding-left:19px;font-size:14.5px;color:var(--ink2);
+  margin:9px 0;line-height:1.65}}
+.facts li::before{{content:"";position:absolute;left:2px;top:8px;width:5px;height:5px;
+  border-radius:50%;background:var(--accent)}}
+.facts b{{color:var(--ink);font-weight:700}}
 @media(max-width:860px){{.cruxes.big,.cruxes.small{{grid-template-columns:repeat(2,1fr)}}}}
 
 .note{{font-size:12.5px;color:var(--ink3);margin-top:14px;line-height:1.7;max-width:80ch}}
@@ -1239,7 +1258,7 @@ td.empty{{color:var(--ink3)}}
 
   <h2>{arm_h2}<span class="cnt">{arm_cnt}</span></h2>
   <p class="lead">{rest_head}</p>
-  <p class="sub">{rest_line}</p>
+  {rest_facts}
   <table>
     <tr><th>弯臂时段</th><th>时长</th><th>最弯</th><th>平均</th></tr>{bent_rows}
   </table>
