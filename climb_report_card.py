@@ -271,7 +271,20 @@ def sidecar_header(out_dir, base):
             f'<span class="fname mono">{base}</span></div>')
 
 
-def hero_block(sc, base):
+def sec_h2(title, cnt="", tip="", minor=False):
+    """区块标题。解释性文字收进标题右边的 i 图标，hover 才展开。
+
+    定义、口径、怎么读图这些话每个区块都要一遍，摊在正文里比数据还占地方
+    （老板 2026-07-20：「全是重复内容…不要浪费篇幅」）。正文只留数据和结论。
+    """
+    cls = ' class="minor"' if minor else ""
+    cnt_html = f'<span class="cnt">{cnt}</span>' if cnt else ""
+    tip_html = (f'<button class="info" type="button" aria-label="口径说明">'
+                f'<span class="tip">{tip}</span></button>') if tip else ""
+    return f'<h2{cls}><span class="h2t">{title}{tip_html}</span>{cnt_html}</h2>'
+
+
+def hero_block(sc, base, tip=""):
     """标题区。
 
     标题用「这条线是什么」——野外用线路名，室内用岩馆名；难度做徽章。
@@ -302,8 +315,11 @@ def hero_block(sc, base):
     badge = f'<div class="gbadge mono">{grade}</div>' if grade else ""
     subline = f'<div class="hsub">{sub}</div>' if sub else ""
 
+    info = (f'<button class="info" type="button" aria-label="数据口径">'
+            f'<span class="tip">{tip}</span></button>') if tip else ""
     return (f'<div class="eyebrow mono">{" · ".join(meta)}</div>'
-            f'<div class="titlerow"><div class="titlebox"><h1>{title}</h1>{subline}</div>'
+            f'<div class="titlerow"><div class="titlebox">'
+            f'<div class="h1row"><h1>{title}</h1>{info}</div>{subline}</div>'
             f'{badge}</div>')
 
 
@@ -951,7 +967,50 @@ def main():
                      f"多找{'右' if p_ > 50 else '左'}{w_}点，两边能匀一些。")
     take_html = "".join(f'<div class="take">{x}</div>' for x in takes)
     card_head = sidecar_header(A.out, A.base)
-    hero_html = hero_block(SC, A.base)
+
+    # 全页口径挂在主标题旁边，不再在页尾摊一大段
+    hero_html = hero_block(SC, A.base, (
+        f"单摄像头、相机不动，用 MediaPipe 估骨架，这条线检出 {det_rate}。"
+        f"长度和速度都用<b>身长</b>（肩中点到髋中点的距离）当单位，"
+        f"所以换手机、换机位、换人都能比；代价是它看相对趋势，不是绝对测量。"
+        f"单目对深度不敏感，主要看画面内的运动。"
+        f"起攀时刻先用「手举过肩」定位上墙再算重心——走向岩壁时人在往远处走，"
+        f"画面里重心会被透视抬高，看着像在爬。"
+        f"阈值在 climb_report_v2.py 顶部，本次取值见 metrics_v2.json 的 params。"))
+
+    h2_stuck = sec_h2(
+        "卡住的地方", f"{len(stuck)} 处",
+        "两种情况会被标出来：起手前停顿超过中位数的 "
+        f"{v2['params']['PREP_CRUX_K']} 倍，或者在同一高度反复出手却没上升。"
+        "<b>画面鼠标移上去会播</b>，是该时刻前 1 秒到后 2 秒的片段。")
+    h2_rhythm = sec_h2(
+        "整条线的节奏", f"起攀 {C['start_s']:.1f}s → 完攀 {C['end_s']:.1f}s",
+        "白线是重心高度。下面窄条是较直那条手臂的肘角，粉底那段是弯着扛。"
+        "<b>鼠标扫过顶部的三角能看到那一刻的画面。</b>")
+    h2_arm = sec_h2(
+        arm_h2, arm_cnt,
+        "胳膊伸直时体重挂在骨头上，几乎不费力；弯着就得靠肌肉一直扛。"
+        "两条胳膊只要有一条是直的就不费力，所以只看比较直的那条。"
+        "连续弯着超过 2 秒才记一段——<b>移动过程中一直弯着也算</b>，不限于停下来的时候。"
+        f"肘角靠单目猜 3D，不太准：只有 {elbow_valid_pct:.0f}% 的帧够可信，其余不参与判定。"
+        "朝镜头方向弯的手臂，画面上看着也是直的，分不出来。")
+    h2_balance = sec_h2(
+        "左右均衡",
+        f"手 {v1['left_arm_usage_pct']}/{100 - v1['left_arm_usage_pct']} · "
+        f"脚 {v1['left_leg_usage_pct']}/{100 - v1['left_leg_usage_pct']}",
+        "按左右肢的活动量分摊，不是真的测力。偏向一边不一定是毛病——"
+        "线路本身可能就偏。同一条线多爬几次再比才有意义。", minor=True)
+    h2_prep = sec_h2(
+        "出手前的停顿", f"中位数 {pmed:.2f}s · 最长 {v2['prep']['max_s']:.2f}s",
+        "每根柱是一次出手前的停顿，柱下是出手时刻和主导肢体。"
+        f"绿线是中位数 {pmed:.2f}s，青线是难点线（中位数的 "
+        f"{v2['params']['PREP_CRUX_K']} 倍 = {plim:.2f}s），超过青线的算「卡住型 · 犹豫」。"
+        "<b>停顿本身不是坏事</b>——高手停下来的时间反而更多，用来甩手恢复和看下一步。"
+        "值得注意的只有超出青线那个量级的停。", minor=True)
+    h2_split = sec_h2(
+        "时间构成", f"起攀 → 完攀 共 {C['climb_time_s']:.1f}s",
+        split_note + "这几个占比没有「应该是多少」的标准，只做记录，不打分。", minor=True)
+    h2_takes = sec_h2("下次记住这几件事")
 
     # 开场白只讲这条线上真实发生的事，不外推到「你这个人怎么样」
     vd = [f"<b>{C['climb_time_s']:.1f} 秒</b>完攀，净上升 <b>{C['net_gain_bl']:.2f} 身长</b>。"]
@@ -1016,11 +1075,15 @@ def main():
                    f'<span>起攀 → 完攀</span><span>{t1:.0f}s</span></div>') if ok_moves else ""
 
             body = (f'<div class="mv-tiles">{"".join(tiles)}</div>{seq}' if ok_moves else
-                    '<p class="sub">这条线上没识别出教材动作（只认位置信号可判的几种）。</p>')
+                    '<p class="sub">这条线上没识别出教材动作。</p>')
+            head = sec_h2("动作记录", f"{len(ok_moves)} 个",
+                          "只列骨架位置信号能可靠判定的动作：高抬脚、两手同点、换手。"
+                          "侧身、掛旗这类要看身体朝向，骨架判不可靠，不硬猜。"
+                          "<b>只记不评</b>——记录做过什么，不判断做得对不对。")
+            lead = f'<p class="lead">{seq_line}</p>' if seq_line else ""
             moves_html = f'''
-  <h2>动作记录<span class="cnt">{len(ok_moves)} 个 · 只记不评</span></h2>
-  <p class="sub">{seq_line}只列骨架位置信号能可靠判定的动作（高抬脚、两手同点、换手）。
-  侧身、掛旗这类要看朝向的，骨架判不可靠，不硬猜。</p>
+  {head}
+  {lead}
   {body}'''
 
     HTML = f'''<meta charset="UTF-8">
@@ -1068,6 +1131,24 @@ h2{{font-size:clamp(23px,3vw,31px);font-weight:700;color:var(--ink);
   justify-content:space-between;align-items:baseline;gap:16px;line-height:1.15}}
 h2 .cnt{{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:400;
   letter-spacing:.06em;white-space:nowrap;flex:none}}
+.h2t{{display:inline-flex;align-items:center;gap:9px;min-width:0}}
+/* 说明图标：CSS 画的圆圈 i，不用 emoji（各系统渲染不一，而且当 UI 图标很廉价） */
+.info{{position:relative;flex:none;width:17px;height:17px;border-radius:50%;
+  border:1px solid var(--ink3);background:none;color:var(--ink3);cursor:help;padding:0;
+  font-family:var(--sans);font-size:11px;font-weight:600;line-height:1;
+  display:inline-grid;place-items:center;letter-spacing:0;text-transform:none;
+  transition:border-color .15s var(--ease),color .15s var(--ease)}}
+.info::before{{content:"i"}}
+.info:hover,.info:focus-visible{{border-color:var(--accent);color:var(--accent);outline:none}}
+.tip{{position:absolute;left:0;top:calc(100% + 10px);
+  width:min(360px,74vw);background:var(--surface2);border:1px solid var(--line);
+  border-radius:4px;padding:13px 15px;text-align:left;
+  font-family:var(--sans);font-size:13px;font-weight:400;line-height:1.7;
+  color:var(--ink2);letter-spacing:0;text-transform:none;
+  opacity:0;visibility:hidden;transition:opacity .15s var(--ease);
+  z-index:40;box-shadow:0 10px 34px rgba(0,0,0,.55);pointer-events:none}}
+.info:hover .tip,.info:focus-visible .tip{{opacity:1;visibility:visible}}
+.tip b{{color:var(--ink);font-weight:700}}
 /* 二级区块：次要参考数据，退成大写小标签，不跟一级抢 */
 h2.minor{{font-size:13px;font-weight:700;color:var(--ink3);letter-spacing:.2em;
   text-transform:uppercase;margin:clamp(40px,5vw,58px) 0 14px;padding-bottom:10px}}
@@ -1218,6 +1299,7 @@ td.empty{{color:var(--ink3)}}
 .titlerow{{display:flex;align-items:flex-start;justify-content:space-between;
           gap:20px;margin-top:10px}}
 .titlebox{{min-width:0}}
+.h1row{{display:flex;align-items:center;gap:11px;flex-wrap:wrap}}
 .hsub{{font-size:15px;color:var(--ink2);margin-top:6px}}
 .gbadge{{flex:none;background:var(--accent);color:var(--acc-ink);font-weight:700;
         font-size:clamp(22px,3.4vw,34px);line-height:1;letter-spacing:-.02em;
@@ -1246,12 +1328,10 @@ td.empty{{color:var(--ink3)}}
       <div class="k">卡住的地方</div><div class="s">往下看，最值得回看的时段</div></div>
   </div>
 
-  <h2>卡住的地方<span class="cnt">{len(stuck)} 处</span></h2>
-  <p class="sub">停顿特别长，或者在同一高度反复出手却上不去。<b>这里是你没想明白怎么走的地方，
-  最值得回看。</b></p>
+  {h2_stuck}
   <div class="cruxes big">{stuck_cards}</div>
 
-  <h2>整条线的节奏<span class="cnt">起攀 {C['start_s']:.1f}s → 完攀 {C['end_s']:.1f}s</span></h2>
+  {h2_rhythm}
   <div class="tlbox">
     <div class="tlwrap">{timeline_svg}{hotspots}</div>
     <div class="legend">
@@ -1262,25 +1342,17 @@ td.empty{{color:var(--ink3)}}
       <span><i style="background:{C_POWER}"></i>发力型吃力点 / 弯臂段</span>
     </div>
   </div>
-  <p class="note">白线是重心高度。下面窄条是较直那条手臂的肘角，粉底那段是弯着扛。
-  <b style="color:var(--ink2)">鼠标扫过顶部的三角，能看到那一刻的画面。</b></p>
 
   {moves_html}
 
-  <h2>{arm_h2}<span class="cnt">{arm_cnt}</span></h2>
-  <p class="sub">{arm_def}</p>
+  {h2_arm}
   <p class="lead">{rest_head}</p>
   {rest_facts}
   <table>
     <tr><th>弯着扛的时段</th><th>持续</th><th>最弯</th><th>平均</th></tr>{bent_rows}
   </table>
-  <p class="note">两条胳膊只要有一条是直的就不费力，所以只看比较直的那条。
-  连续弯着超过 2 秒才记一段——移动过程中一直弯着也算，不限于停下来的时候。
-  <br>肘角靠单目猜 3D，不太准：<b>只有 {elbow_valid_pct:.0f}% 的帧够可信</b>，其余不参与判定。
-  朝镜头方向弯的手臂，画面上看着也是直的，分不出来。</p>
 
-  <h2 class="minor">左右均衡<span class="cnt">手 {v1['left_arm_usage_pct']}/{100-v1['left_arm_usage_pct']}
-    · 脚 {v1['left_leg_usage_pct']}/{100-v1['left_leg_usage_pct']}</span></h2>
+  {h2_balance}
   <div class="two">
     <div>
       <div class="lbl">左右手用力分布</div>
@@ -1296,30 +1368,14 @@ td.empty{{color:var(--ink3)}}
     </div>
   </div>
 
-  <h2 class="minor">出手前的停顿<span class="cnt">中位数 {pmed:.2f}s · 最长 {v2['prep']['max_s']:.2f}s</span></h2>
+  {h2_prep}
   <div class="tlbox">{prep_svg}</div>
-  <p class="note">每根柱是一次出手前的停顿，柱下是出手时刻和主导肢体。
-  绿线是中位数 {pmed:.2f}s，青线是<b>难点线</b>（中位数的 {v2['params']['PREP_CRUX_K']} 倍
-  = {plim:.2f}s）。超过青线的算「卡住型 · 犹豫」。
-  <b>停顿本身不是坏事</b>——高手停下来的时间反而更多，用来甩手恢复和看下一步。
-  值得注意的只有超出青线那种量级的停。</p>
 
-  <h2 class="minor">时间构成<span class="cnt">起攀 → 完攀 共 {C['climb_time_s']:.1f}s</span></h2>
+  {h2_split}
   <div class="tlbox">{split_svg}</div>
-  <p class="note">{split_note}
-  这几个占比没有「应该是多少」的标准——只做记录，不打分。</p>
 
-  <h2>下次记住这几件事</h2>
+  {h2_takes}
   {take_html}
-
-  <div class="note foot"><b>数据口径。</b>单摄像头、相机不动，用 MediaPipe 估骨架，
-  这条线检出 {det_rate}。
-  长度和速度都用<b>身长</b>（你肩中点到髋中点的距离）当单位，所以换手机、换机位、换人都能比。
-  代价是它看的是相对趋势，不是实验室级的绝对测量。单目对深度不敏感，主要看画面内的运动。
-  起攀时刻先用「手举过肩」定位上墙，再算重心——因为走向岩壁时人在往远处走，
-  画面里重心会被透视抬高，看着像在爬。
-  阈值都在 climb_report_v2.py 顶部，本次取值见 metrics_v2.json 的 params。
-  画面是切面前 1 秒到后 2 秒的 3 秒片段，鼠标移上去就播。</div>
 </div>
 
 {HOVER_JS}'''

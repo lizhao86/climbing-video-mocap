@@ -33,6 +33,20 @@ def esc(s):
     return html.escape(str(s if s is not None else ""), quote=True)
 
 
+def info(tip):
+    """标题旁的说明图标，hover 才展开。
+
+    定义和口径摊在正文里比数据还占地方（老板 2026-07-20：
+    「全是重复内容…不要浪费篇幅」）。正文只留数据。
+    """
+    return (f'<button class="info" type="button" aria-label="口径说明">'
+            f'<span class="tip">{tip}</span></button>') if tip else ""
+
+
+def sec_head(title, tip=""):
+    return f'<div class="sec-head"><div class="sec-t">{title}{info(tip)}</div></div>'
+
+
 def fmt_time(sec):
     if sec is None:
         return "—"
@@ -122,9 +136,8 @@ def mileage_block(j):
         f'<div class="stat"><div class="stat-num">{esc(v)}'
         f'<span class="stat-unit">{esc(u)}</span></div>'
         f'<div class="stat-lbl">{esc(l)}</div></div>' for v, u, l in cells)
-    hint = ('<p class="note">爬升按身长算。想看米数，把身高告诉 Claude。</p>'
-            if not j.get("height_m") else "")
-    return f'<div class="stats">{inner}</div>{hint}'
+    # 身高的事页首 info 里说过了，这里不重复
+    return f'<div class="stats">{inner}</div>'
 
 
 def footprint_block(j):
@@ -319,8 +332,27 @@ h1{{font-size:clamp(38px,7vw,76px);line-height:.94;letter-spacing:-.035em;
           padding-bottom:12px;margin-bottom:clamp(20px,3vw,30px);
           border-bottom:1px solid var(--line)}}
 .sec-t{{font-size:13px;letter-spacing:.22em;text-transform:uppercase;
-       font-family:var(--mono);color:var(--acc)}}
-.sec-sub{{font-size:12px;color:var(--ink3)}}
+       font-family:var(--mono);color:var(--acc);display:inline-flex;
+       align-items:center;gap:9px}}
+.secn{{color:var(--ink3);letter-spacing:.06em}}
+.h1row{{display:flex;align-items:center;gap:12px;flex-wrap:wrap}}
+/* 说明图标：CSS 画的圆圈 i，不用 emoji（各系统渲染不一，当 UI 图标也很廉价） */
+.info{{position:relative;flex:none;width:17px;height:17px;border-radius:50%;
+  border:1px solid var(--ink3);background:none;color:var(--ink3);cursor:help;padding:0;
+  font-family:var(--sans);font-size:11px;font-weight:600;line-height:1;
+  display:inline-grid;place-items:center;letter-spacing:0;text-transform:none;
+  transition:border-color .15s var(--ease),color .15s var(--ease)}}
+.info::before{{content:"i"}}
+.info:hover,.info:focus-visible{{border-color:var(--acc);color:var(--acc);outline:none}}
+.tip{{position:absolute;left:0;top:calc(100% + 10px);
+  width:min(360px,74vw);background:var(--surface2);border:1px solid var(--line);
+  border-radius:4px;padding:13px 15px;text-align:left;
+  font-family:var(--sans);font-size:13px;font-weight:400;line-height:1.7;
+  color:var(--ink2);letter-spacing:0;text-transform:none;
+  opacity:0;visibility:hidden;transition:opacity .15s var(--ease);
+  z-index:40;box-shadow:0 10px 34px rgba(0,0,0,.55);pointer-events:none}}
+.info:hover .tip,.info:focus-visible .tip{{opacity:1;visibility:visible}}
+.tip b{{color:var(--ink);font-weight:700}}
 
 /* ---- 荣誉巨型数字 ---- */
 .hero-stats{{display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,3vw,34px)}}
@@ -453,41 +485,47 @@ a.row:focus-visible{{outline:2px solid var(--acc);outline-offset:-2px}}
 <body><div class="wrap">
 
 <div class="eyebrow">CLIMBING LOG · {esc(j.get("generated_at", ""))}</div>
-<h1>攀岩账本</h1>
+<div class="h1row"><h1>攀岩账本</h1>{info(
+  "爬升、在墙时长、出手次数由骨架计量得出；难度、完攀、地点是手记。"
+  "爬升单位是<b>身长</b>（肩中点到髋中点的距离），填了身高才换算成米。"
+  "这一页只读，要改内容跟 Claude 说一句就行。")}</div>
 <p class="lede">{esc(lede)}</p>
 
 <section class="sec">
-  <div class="sec-head"><div class="sec-t">荣誉</div>
-    <div class="sec-sub">抱石与绳索两套刻度，分开排</div></div>
+  {sec_head("荣誉",
+    "抱石用 V 级、绳索用 YDS（5.x），两套刻度不能混排，所以分开统计。"
+    "注意 <b>5.9 比 5.10a 简单</b>。只有完攀的才进最高难度和分布，"
+    "没送顶的只算尝试。")}
   {honor_block(j)}
 </section>
 
 <section class="sec">
-  <div class="sec-head"><div class="sec-t">里程</div>
-    <div class="sec-sub">只增不减</div></div>
+  {sec_head("里程",
+    "只增不减的累计数。在墙时长只算起攀到完攀那一段，"
+    "走近岩壁和爬完下来的时间不计。")}
   {mileage_block(j)}
 </section>
 
 <section class="sec">
-  <div class="sec-head"><div class="sec-t">足迹</div>
-    <div class="sec-sub">去过哪、收集到什么</div></div>
+  {sec_head("足迹",
+    "动作收集册只收骨架位置信号能可靠判定的几种（高抬脚、两手同点、换手）。"
+    "侧身、掛旗这类要看身体朝向，骨架判不可靠，不进收集册。"
+    "<b>连续周</b>按自然周算，当前连续以本周为锚，断了就是 0。")}
   {footprint_block(j)}
 </section>
 
 <section class="sec">
-  <div class="sec-head"><div class="sec-t">爬升足迹</div>
-    <div class="sec-sub">每条线的净爬升</div></div>
+  {sec_head("爬升足迹", "一条线一根柱，高度是这条线的净爬升（起攀点到最高点）。"
+                        "柱底标日期和难度。")}
   <div class="tl">{timeline_svg(entries, height_m)}</div>
 </section>
 
 <section class="sec">
-  <div class="sec-head"><div class="sec-t">线路目录</div>
-    <div class="sec-sub">{len(entries)} 条 · 新的在前 · 点开看单条报告</div></div>
+  {sec_head(f'线路目录 <span class="secn mono">{len(entries)}</span>',
+            "按月分组，新的在前。点一条打开它的报告卡。"
+            "日期优先用视频里的拍摄时间，标了问号的是按文件时间推的，可能不准。")}
   {catalog(entries, height_m)}
 </section>
-
-<p class="foot">爬升与出手次数由骨架计量得出，难度与完攀是手记。<br>
-数字口径见 PLAN.md；这一页只读，改内容跟 Claude 说。</p>
 
 </div></body></html>"""
 
