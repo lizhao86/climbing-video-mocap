@@ -727,9 +727,9 @@ def main():
         # 结论当主体、时刻退成角标（老板 2026-07-20：「重点放在视频帧位置，
         # 这不是重点，重点应该结论才对」）。时刻仍要留——回看视频得知道跳到哪。
         return f'''<figure class="crux {cls}">{img}{hint}<figcaption>
-  <div class="ctag">{tag}</div>
-  {detail_html}
-  <div class="tm mono">{c["t"]:.1f}s</div></figcaption></figure>'''
+  <div class="crux-top"><span class="ctag">{tag}</span>
+    <span class="tm mono">{c["t"]:.1f}s</span></div>
+  {detail_html}</figcaption></figure>'''
 
     stuck_cards = "".join(card(c, "stuck") for c in stuck)
     # 「姿态最极端的瞬间」卡片区块 2026-07-18 砍掉：v1 crux 已实锤退化成「关节弯得深」
@@ -834,11 +834,20 @@ def main():
     # 绳索线（high wall）两样都讲：单臂打直甩手的真休息 + 憋着的时间。
     SC = load_sidecar(A.out)
     IS_ROPE = is_rope_route(SC)
+    # 标题得让没上下文的人也看懂。「憋着的时间」是老板自己的说法，搬来当标题就变味了
+    # （老板 2026-07-20：「什么叫憋着的时间？是指两次移动间隙吗？你这个中文不行」）。
+    # 这个指标测的是：较直那条手臂的肘角连续 2 秒以上低于 150°——不限于停顿，
+    # 移动中一直弯着也算。
+    n_bent = v2["bent_arm"]["n"]
     if IS_ROPE:
-        arm_h2, arm_cnt = "省力", (f"弯臂 {v2['bent_arm']['n']} 段 · "
-                                   f"真休息 {v2['rests']['n']} 次")
+        arm_h2 = "手臂省力了吗"
+        arm_cnt = (f"弯着扛 {n_bent} 段 · 挂着歇 {v2['rests']['n']} 次"
+                   if n_bent else f"挂着歇 {v2['rests']['n']} 次")
     else:
-        arm_h2, arm_cnt = "憋着的时间", f"弯臂 {v2['bent_arm']['n']} 段"
+        arm_h2 = "手臂伸直了吗"
+        arm_cnt = f"弯着扛 {n_bent} 段" if n_bent else "全程没有弯着扛的段落"
+    arm_def = ("胳膊伸直的时候，体重挂在骨头上，几乎不费力；弯着就得靠肌肉一直扛。"
+               "下面看你有多少时间在扛。")
     split_note = ("「真休息」需同时满足：直臂 + 重心低速 + 持续 &gt;2 秒。"
                   "其余停顿都算「找点调整」。"
                   if IS_ROPE else
@@ -1121,13 +1130,15 @@ h2.minor .cnt{{letter-spacing:.06em}}
 .crux:hover .shot-hint{{opacity:0}}
 .crux .ph{{display:grid;place-items:center;color:var(--ink3);font-size:12px;aspect-ratio:4/5}}
 .crux figcaption{{padding:16px 17px 17px}}
-/* 结论是主角，时刻退成角标（老板 2026-07-20：「重点应该结论才对，视频帧位置弱化」）。
+/* 结论是主角；分类做成 label、时刻缩成同行小字（老板 2026-07-20）。
    时刻不能删——回看视频得知道跳到哪一秒。 */
-.crux .ctag{{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ink3);margin-bottom:9px}}
+.crux-top{{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-bottom:11px}}
+.crux .ctag{{font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 8px;
+  border-radius:2px;background:var(--surface2);color:var(--ink2);white-space:nowrap}}
 .crux p{{font-size:15px;line-height:1.55;color:var(--ink);margin:0}}
-.crux .tm{{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-top:12px;
-  padding-top:10px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}}
+.crux .tm{{font-family:var(--mono);font-size:10px;color:var(--ink3);flex:none;
+  font-variant-numeric:tabular-nums}}
 .vtag{{font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--accent);
   border-radius:3px;padding:1px 5px;margin-left:6px;white-space:nowrap;vertical-align:1px}}
 .crux .tag{{font-size:11px;font-weight:700;margin-top:8px;display:inline-block;
@@ -1257,12 +1268,14 @@ td.empty{{color:var(--ink3)}}
   {moves_html}
 
   <h2>{arm_h2}<span class="cnt">{arm_cnt}</span></h2>
+  <p class="sub">{arm_def}</p>
   <p class="lead">{rest_head}</p>
   {rest_facts}
   <table>
-    <tr><th>弯臂时段</th><th>时长</th><th>最弯</th><th>平均</th></tr>{bent_rows}
+    <tr><th>弯着扛的时段</th><th>持续</th><th>最弯</th><th>平均</th></tr>{bent_rows}
   </table>
-  <p class="note">只要有一条手臂伸直，体重就挂在骨头上，不费力。所以只看比较直的那条。
+  <p class="note">两条胳膊只要有一条是直的就不费力，所以只看比较直的那条。
+  连续弯着超过 2 秒才记一段——移动过程中一直弯着也算，不限于停下来的时候。
   <br>肘角靠单目猜 3D，不太准：<b>只有 {elbow_valid_pct:.0f}% 的帧够可信</b>，其余不参与判定。
   朝镜头方向弯的手臂，画面上看着也是直的，分不出来。</p>
 
