@@ -241,16 +241,34 @@ def grab_shots(video, times, boxes, outdir, tag):
     return jpgs, mp4s, offs
 
 
+def load_sidecar(out_dir):
+    """读 <素材文件夹>/线路.json → dict。没有或坏了都返回 {}。"""
+    path = os.path.join(out_dir, "线路.json")
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except (ValueError, OSError):
+        return {}
+
+
+def is_rope_route(sc):
+    """这条线是不是绳索线（顶绳/先锋）。
+
+    抱石一气呵成、不存在挂着歇，休息点指标恒为 0，报出来没有意义
+    （老板 2026-07-20：「整个移动是不存在休息的，说这个有什么意思」）。
+    绳索线（high wall）才会出现单臂打直甩手的真休息。
+    类型没填时保守当抱石——宁可不显示，也不显示一个恒零的指标。
+    """
+    return (sc.get("类型") or "").strip() in ("顶绳", "先锋")
+
+
 def sidecar_header(out_dir):
     """读 <素材文件夹>/线路.json → 返回页眉 HTML。没有 sidecar 就只给返回链接。"""
-    path = os.path.join(out_dir, "线路.json")
+    sc = load_sidecar(out_dir)
     chips = []
-    if os.path.exists(path):
-        try:
-            with open(path, encoding="utf-8") as f:
-                sc = json.load(f)
-        except (ValueError, OSError):
-            sc = {}
+    if sc:
         for key in ("类型", "难度", "地点", "线路名"):
             val = (sc.get(key) or "").strip()
             if val:
@@ -681,10 +699,12 @@ def main():
                        else f'<p>{c["detail"]}</p>')
         # 悬浮才播的东西必须自己说「我能播」，否则跟静态图长得一样，没人会去悬浮
         hint = '<span class="shot-hint"></span>' if c.get("clip") else ""
+        # 结论当主体、时刻退成角标（老板 2026-07-20：「重点放在视频帧位置，
+        # 这不是重点，重点应该结论才对」）。时刻仍要留——回看视频得知道跳到哪。
         return f'''<figure class="crux {cls}">{img}{hint}<figcaption>
-  <div class="tm">{c["t"]:.1f}<span>s</span></div>
-  <div class="tag">{tag}</div>
-  {detail_html}</figcaption></figure>'''
+  <div class="ctag">{tag}</div>
+  {detail_html}
+  <div class="tm mono">{c["t"]:.1f}s</div></figcaption></figure>'''
 
     stuck_cards = "".join(card(c, "stuck") for c in stuck)
     # 「姿态最极端的瞬间」卡片区块 2026-07-18 砍掉：v1 crux 已实锤退化成「关节弯得深」
@@ -784,7 +804,47 @@ def main():
     stat_segs = [s for s in v2["adjusts"]["items"] if s.get("elbow_open_med") is not None]
     bent_segs = [s for s in stat_segs if s["elbow_open_med"] < BENT_ISH]
     straight_segs = [s for s in stat_segs if s["elbow_open_med"] >= BENT_ISH]
-    if v2["rests"]["n"] == 0 and bent_segs and straight_segs:
+    # 抱石一气呵成，挂着歇根本不会发生，rests 恒为 0——报「没有一次真休息」是拿
+    # 恒零指标说事（老板 2026-07-20：「说这个有什么意思」）。抱石只讲「有没有憋着」，
+    # 绳索线（high wall）两样都讲：单臂打直甩手的真休息 + 憋着的时间。
+    SC = load_sidecar(A.out)
+    IS_ROPE = is_rope_route(SC)
+    if IS_ROPE:
+        arm_h2, arm_cnt = "省力", (f"弯臂 {v2['bent_arm']['n']} 段 · "
+                                   f"真休息 {v2['rests']['n']} 次")
+    else:
+        arm_h2, arm_cnt = "憋着的时间", f"弯臂 {v2['bent_arm']['n']} 段"
+    split_note = ("「真休息」需同时满足：直臂 + 重心低速 + 持续 &gt;2 秒。"
+                  "其余停顿都算「找点调整」。"
+                  if IS_ROPE else
+                  "抱石线上「真休息」恒为 0——一条线几十秒，不会出现挂着歇，"
+                  "这不是没做到。停顿都归在「找点调整」里。")
+
+    if not IS_ROPE:
+        # 抱石：只回答「停下来的时候手臂憋着没有」
+        if bent_segs and straight_segs:
+            longest = max(bent_segs, key=lambda s: s["dur_s"])
+            sm = [s["elbow_open_med"] for s in straight_segs]
+            rest_head = "长停顿在憋，短停顿不。"
+            rest_line = (f"你一共停了 {len(stat_segs)} 次。{len(bent_segs)} 次手臂弯着扛"
+                         f"（最长 {longest['dur_s']:.1f} 秒，肘角 {longest['elbow_open_med']:.0f}°）；"
+                         f"另外 {len(straight_segs)} 次手臂基本是直的"
+                         f"（{min(sm):.0f}–{max(sm):.0f}°），那几次不费力。")
+        elif bent_segs:
+            longest = max(bent_segs, key=lambda s: s["dur_s"])
+            rest_head = "停下来的时候手臂都弯着。"
+            rest_line = (f"{len(bent_segs)} 次停顿全在憋，最长一次 {longest['dur_s']:.1f} 秒"
+                         f"（肘角 {longest['elbow_open_med']:.0f}°）。想不出下一步时先把手臂"
+                         f"伸直挂着，重量落到骨头上就不费力。")
+        elif straight_segs:
+            sm = [s["elbow_open_med"] for s in straight_segs]
+            rest_head = "停顿时手臂都是直的。"
+            rest_line = (f"{len(straight_segs)} 次停顿肘角都在 {min(sm):.0f}–{max(sm):.0f}°，"
+                         f"没有憋着扛的段落。")
+        else:
+            rest_head = "没测到值得说的停顿。"
+            rest_line = "要么没停，要么停的那几次肘角不够可信，没参与判定。"
+    elif v2["rests"]["n"] == 0 and bent_segs and straight_segs:
         # 「最长」必须从**弯着的那几次**里取，不能从所有停顿里取——否则会拿一个
         # 手臂其实伸直的长停顿去佐证"弯着扛"
         longest = max(bent_segs, key=lambda s: s["dur_s"])
@@ -872,15 +932,44 @@ def main():
         ok_moves = [m for m in REC["moves"] if m["confidence"] in ("high", "medium")
                     and t0 <= m["t_s"] <= t1]
         hs = REC.get("hand_sequence") or {}
-        rows_ = "".join(
-            f"<tr><td>{m['t_s']:.1f}s</td><td>{m['name_zh']}</td><td>{m['limb']}</td>"
-            f"<td>{'书 p.' + str(m['book_ref']).split('p.')[-1] if m.get('book_ref') else ''}</td></tr>"
-            for m in ok_moves)
         seq_line = (f"出手 {hs.get('n_hand_moves', 0)} 次，左右轮流占 "
                     f"{hs.get('alternating_pct')}%。" if hs.get("n_hand_moves") else "")
         if ok_moves or seq_line:
-            body = (f"<table><tr><th>时刻</th><th>动作</th><th>肢体</th><th>出处</th></tr>"
-                    f"{rows_}</table>" if ok_moves else
+            # 先给统计（每种几次、偏哪边），再给时序。原来只有一张时刻表，
+            # 老板看完问「是不是还没有判断动作」——列表不等于统计。
+            by_kind = {}
+            for m in ok_moves:
+                k = by_kind.setdefault(m["move_id"], {"name": m["name_zh"], "n": 0,
+                                                      "limbs": {}, "ref": m.get("book_ref") or ""})
+                k["n"] += 1
+                k["limbs"][m["limb"]] = k["limbs"].get(m["limb"], 0) + 1
+
+            tiles = []
+            for k in sorted(by_kind.values(), key=lambda x: -x["n"]):
+                side = ""
+                if k["limbs"]:
+                    top_limb, top_n = max(k["limbs"].items(), key=lambda kv: kv[1])
+                    side = (f'<div class="mv-side">全是{top_limb}</div>' if top_n == k["n"]
+                            else '<div class="mv-side">' +
+                                 " · ".join(f"{l} {n}" for l, n in
+                                            sorted(k["limbs"].items(), key=lambda kv: -kv[1])) +
+                                 '</div>')
+                ref = ('<div class="mv-ref mono">书 p.' +
+                       str(k["ref"]).split("p.")[-1] + "</div>") if k["ref"] else ""
+                tiles.append(f'<div class="mv-tile"><div class="mv-n mono">{k["n"]}</div>'
+                             f'<div class="mv-name">{k["name"]}</div>{side}{ref}</div>')
+
+            # 时序：动作落在攀爬窗口哪个位置。一眼看出是集中在起步还是收尾。
+            span = max(t1 - t0, 0.001)
+            dots = "".join(
+                f'<div class="mv-dot" style="left:{100 * (m["t_s"] - t0) / span:.2f}%" '
+                f'title="{m["t_s"]:.1f}s · {m["name_zh"]} · {m["limb"]}"></div>'
+                for m in ok_moves)
+            seq = (f'<div class="mv-track"><div class="mv-line"></div>{dots}</div>'
+                   f'<div class="mv-axis mono"><span>{t0:.0f}s</span>'
+                   f'<span>起攀 → 完攀</span><span>{t1:.0f}s</span></div>') if ok_moves else ""
+
+            body = (f'<div class="mv-tiles">{"".join(tiles)}</div>{seq}' if ok_moves else
                     '<p class="sub">这条线上没识别出教材动作（只认位置信号可判的几种）。</p>')
             moves_html = f'''
   <h2>动作记录<span class="cnt">{len(ok_moves)} 个 · 只记不评</span></h2>
@@ -895,13 +984,19 @@ def main():
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{{
-  --bg:#0b0c0f; --surface:#14161b; --surface2:#1b1e25; --line:#262a33;
-  --ink:#e9ecf1; --ink2:#a2a9b8; --ink3:#6b7280;
-  --chip:#1b1e25; --ok:#2e7d5b;
-  --accent:{C_MOVE}; --rest:{C_REST}; --adjust:{C_ADJUST};
+  /* 与 攀岩账本.html 同一套令牌：深炭底 + 单一酸绿强调。
+     强调色只给 UI（关键数字、当前态）；图表里的橙/绿/蓝是**数据编码**，
+     各自有语义，不参与装饰。 */
+  --bg:#0B0C0E; --surface:#131519; --surface2:#191C22; --line:#232733;
+  --ink:#F2F4F7; --ink2:#9AA3B2; --ink3:#5D6675;
+  --chip:#191C22; --ok:#4E9E6A;
+  --accent:#AFD639; --acc-ink:#12160A;
+  --move:{C_MOVE}; --rest:{C_REST}; --adjust:{C_ADJUST};
   --stuck:{C_STUCK}; --power:{C_POWER};
-  --sans:"Space Grotesk","Microsoft YaHei","PingFang SC",sans-serif;
-  --mono:"Space Mono",ui-monospace,monospace;
+  --sans:"Space Grotesk","Segoe UI Variable Display","Microsoft YaHei",
+         "PingFang SC",sans-serif;
+  --mono:"Space Mono","Cascadia Mono",Consolas,ui-monospace,monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
 }}
 *{{box-sizing:border-box}}
 em,i,cite{{font-style:normal}}
@@ -911,15 +1006,25 @@ body{{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
 /* 字距只给拉丁文——中文加 letter-spacing 会被拉散成"标语体"，很丑 */
 .eyebrow{{font-family:var(--mono);font-size:11px;color:var(--ink3)}}
 .eyebrow .lat{{letter-spacing:.18em;text-transform:uppercase}}
-h1{{font-size:clamp(32px,4vw,46px);font-weight:700;letter-spacing:-.02em;margin:6px 0 0;
-  font-family:var(--mono)}}
-.verdict{{font-size:19px;color:var(--ink2);max-width:60ch;margin:18px 0 0;text-wrap:pretty}}
+h1{{font-size:clamp(34px,5.5vw,60px);font-weight:700;letter-spacing:-.035em;margin:8px 0 0;
+  font-family:var(--mono);line-height:1}}
+/* 一句话结论是整页最该被读到的文字，字号仅次于标题，用主文字色 */
+.verdict{{font-size:clamp(19px,2.3vw,26px);line-height:1.5;color:var(--ink2);
+  max-width:34ch;margin:20px 0 0;text-wrap:pretty}}
 .verdict b{{color:var(--ink);font-weight:700}}
 
-h2{{font-size:14px;font-weight:700;color:var(--ink2);margin:64px 0 18px;
-  padding-bottom:10px;border-bottom:1px solid var(--line);display:flex;
-  justify-content:space-between;align-items:baseline;gap:16px}}
-h2 .cnt{{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:400}}
+/* 一级区块：大标题。原来 h2 只有 14px，比正文还小，层级是反的
+   （老板 2026-07-20：「标题子标题正文字体大小差不多，有点看不明白」）。 */
+h2{{font-size:clamp(23px,3vw,31px);font-weight:700;color:var(--ink);
+  letter-spacing:-.02em;margin:clamp(56px,7vw,84px) 0 16px;
+  padding-bottom:14px;border-bottom:1px solid var(--line);display:flex;
+  justify-content:space-between;align-items:baseline;gap:16px;line-height:1.15}}
+h2 .cnt{{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:400;
+  letter-spacing:.06em;white-space:nowrap;flex:none}}
+/* 二级区块：次要参考数据，退成大写小标签，不跟一级抢 */
+h2.minor{{font-size:13px;font-weight:700;color:var(--ink3);letter-spacing:.2em;
+  text-transform:uppercase;margin:clamp(40px,5vw,58px) 0 14px;padding-bottom:10px}}
+h2.minor .cnt{{letter-spacing:.06em}}
 
 .kpis{{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
   border:1px solid var(--line);margin-top:40px}}
@@ -977,14 +1082,35 @@ h2 .cnt{{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:40
   border-top:4.5px solid transparent;border-bottom:4.5px solid transparent;margin-left:2px}}
 .crux:hover .shot-hint{{opacity:0}}
 .crux .ph{{display:grid;place-items:center;color:var(--ink3);font-size:12px;aspect-ratio:4/5}}
-.crux figcaption{{padding:14px 16px 16px}}
-.crux .tm{{font-family:var(--mono);font-weight:700;line-height:1;
-  font-variant-numeric:tabular-nums}}
-.crux .tm span{{font-size:.5em;color:var(--ink3);margin-left:2px}}
+.crux figcaption{{padding:16px 17px 17px}}
+/* 结论是主角，时刻退成角标（老板 2026-07-20：「重点应该结论才对，视频帧位置弱化」）。
+   时刻不能删——回看视频得知道跳到哪一秒。 */
+.crux .ctag{{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:9px}}
+.crux p{{font-size:15px;line-height:1.55;color:var(--ink);margin:0}}
+.crux .tm{{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-top:12px;
+  padding-top:10px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}}
 .vtag{{font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--accent);
   border-radius:3px;padding:1px 5px;margin-left:6px;white-space:nowrap;vertical-align:1px}}
 .crux .tag{{font-size:11px;font-weight:700;margin-top:8px;display:inline-block;
   padding:3px 8px;border-radius:2px}}
+
+/* ---- 动作记录：先统计后时序 ---- */
+.mv-tiles{{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));
+  gap:10px;margin-bottom:26px}}
+.mv-tile{{background:var(--surface);border:1px solid var(--line);padding:16px 17px}}
+.mv-n{{font-size:38px;font-weight:700;line-height:1;letter-spacing:-.04em;
+  color:var(--accent);font-variant-numeric:tabular-nums}}
+.mv-name{{font-size:14px;font-weight:600;margin-top:8px}}
+.mv-side{{font-size:12px;color:var(--ink2);margin-top:3px}}
+.mv-ref{{font-size:10px;color:var(--ink3);margin-top:5px}}
+.mv-track{{position:relative;height:34px;margin-top:6px}}
+.mv-line{{position:absolute;top:16px;left:0;right:0;height:1px;background:var(--line)}}
+.mv-dot{{position:absolute;top:10px;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--bg);cursor:help;
+  transition:transform .15s var(--ease)}}
+.mv-dot:hover{{transform:scale(1.5)}}
+.mv-axis{{display:flex;justify-content:space-between;font-size:10px;color:var(--ink3)}}
 .crux p{{font-size:12.5px;color:var(--ink2);margin:10px 0 0;line-height:1.6}}
 .crux.stuck .tag{{color:var(--stuck);background:color-mix(in srgb,var(--stuck) 15%,transparent)}}
 .crux.power .tag{{color:var(--power);background:color-mix(in srgb,var(--power) 15%,transparent)}}
@@ -1055,6 +1181,11 @@ td.empty{{color:var(--ink3)}}
       <div class="k">卡住的地方</div><div class="s">往下看，最值得回看的时段</div></div>
   </div>
 
+  <h2>卡住的地方<span class="cnt">{len(stuck)} 处</span></h2>
+  <p class="sub">停顿特别长，或者在同一高度反复出手却上不去。<b>这里是你没想明白怎么走的地方，
+  最值得回看。</b></p>
+  <div class="cruxes big">{stuck_cards}</div>
+
   <h2>整条线的节奏<span class="cnt">起攀 {C['start_s']:.1f}s → 完攀 {C['end_s']:.1f}s</span></h2>
   <div class="tlbox">
     <div class="tlwrap">{timeline_svg}{hotspots}</div>
@@ -1069,11 +1200,9 @@ td.empty{{color:var(--ink3)}}
   <p class="note">白线是重心高度。下面窄条是较直那条手臂的肘角，粉底那段是弯着扛。
   <b style="color:var(--ink2)">鼠标扫过顶部的三角，能看到那一刻的画面。</b></p>
 
-  <h2>卡住的地方<span class="cnt">{len(stuck)} 处 · 最值得回看</span></h2>
-  <p class="sub">停顿特别长，或者在同一高度反复出手却上不去。<b>这里是你没想明白怎么走的地方。</b></p>
-  <div class="cruxes big">{stuck_cards}</div>
+  {moves_html}
 
-  <h2>省力<span class="cnt">弯臂 {v2['bent_arm']['n']} 段 · 真休息 {v2['rests']['n']} 次</span></h2>
+  <h2>{arm_h2}<span class="cnt">{arm_cnt}</span></h2>
   <p class="lead">{rest_head}</p>
   <p class="sub">{rest_line}</p>
   <table>
@@ -1083,6 +1212,8 @@ td.empty{{color:var(--ink3)}}
   <br>肘角靠单目猜 3D，不太准：<b>只有 {elbow_valid_pct:.0f}% 的帧够可信</b>，其余不参与判定。
   朝镜头方向弯的手臂，画面上看着也是直的，分不出来。</p>
 
+  <h2 class="minor">左右均衡<span class="cnt">手 {v1['left_arm_usage_pct']}/{100-v1['left_arm_usage_pct']}
+    · 脚 {v1['left_leg_usage_pct']}/{100-v1['left_leg_usage_pct']}</span></h2>
   <div class="two">
     <div>
       <div class="lbl">左右手用力分布</div>
@@ -1098,9 +1229,7 @@ td.empty{{color:var(--ink3)}}
     </div>
   </div>
 
-  {moves_html}
-
-  <h2>每次出手前，你停了多久<span class="cnt">中位数 {pmed:.2f}s · 最长 {v2['prep']['max_s']:.2f}s</span></h2>
+  <h2 class="minor">出手前的停顿<span class="cnt">中位数 {pmed:.2f}s · 最长 {v2['prep']['max_s']:.2f}s</span></h2>
   <div class="tlbox">{prep_svg}</div>
   <p class="note">每根柱是一次出手前的停顿，柱下是出手时刻和主导肢体。
   绿线是中位数 {pmed:.2f}s，青线是<b>难点线</b>（中位数的 {v2['params']['PREP_CRUX_K']} 倍
@@ -1108,12 +1237,12 @@ td.empty{{color:var(--ink3)}}
   <b>停顿本身不是坏事</b>——高手停下来的时间反而更多，用来甩手恢复和看下一步。
   值得注意的只有超出青线那种量级的停。</p>
 
-  <h2>时间去哪了<span class="cnt">起攀 → 完攀 共 {C['climb_time_s']:.1f}s</span></h2>
+  <h2 class="minor">时间构成<span class="cnt">起攀 → 完攀 共 {C['climb_time_s']:.1f}s</span></h2>
   <div class="tlbox">{split_svg}</div>
-  <p class="note">「真休息」需同时满足：直臂 + 重心低速 + 持续 &gt;2 秒。其余停顿都算「找点调整」。
-  这三个占比没有「应该是多少」的标准——只做记录，不打分。</p>
+  <p class="note">{split_note}
+  这几个占比没有「应该是多少」的标准——只做记录，不打分。</p>
 
-  <h2>解读</h2>
+  <h2>下次记住这几件事</h2>
   {take_html}
 
   <div class="note foot"><b>数据口径。</b>单摄像头、相机不动，用 MediaPipe 估骨架，
