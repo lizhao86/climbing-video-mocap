@@ -1021,16 +1021,14 @@ def main():
         split_note + "这几个占比没有「应该是多少」的标准，只做记录，不打分。", minor=True)
     h2_takes = sec_h2("下次记住这几件事")
 
-    # 净上升：填了身高就报米数，没填退回身长（老板 2026-07-20 填了 1.8m）
-    HEIGHT_M = load_height_m()
-    if HEIGHT_M:
-        gain_val = f"{C['net_gain_bl'] * HEIGHT_M:.1f}"
-        gain_unit = "米"
-        gain_sub = f"起攀点 → 最高点 · 按身高 {HEIGHT_M:.2f}m 换算"
-    else:
-        gain_val = f"{C['net_gain_bl']:.2f}"
-        gain_unit = "身长"
-        gain_sub = "起攀点 → 最高点"
+    # 净上升只报相对量，不换算米数。2026-07-20 实测：单目固定机位恢复不了绝对高度
+    # ——IMG_6321 老板确认墙高 10m，骨架推出来只有 4.7m。原因是相机仰拍，图像 y 与
+    # 真实高度非线性（高处被压缩），而躯干投影只补偿了「人变小」那一层。
+    # 逐帧局部尺度积分与全局中位数数学上等价（实测差 1%），修不了。见 PLAN.md 待办。
+    # ⚠️ 单位是**躯干长**（肩中-髋中距），不是身长——曾误当身长乘身高，放大了 3.5 倍。
+    gain_val = f"{C['net_gain_bl']:.2f}"
+    gain_unit = "躯干"
+    gain_sub = "起攀点 → 最高点"
 
     # 开场白只讲这条线上真实发生的事，不外推到「你这个人怎么样」
     vd = [f"<b>{C['climb_time_s']:.1f} 秒</b>完攀，净上升 <b>{C['net_gain_bl']:.2f} 身长</b>。"]

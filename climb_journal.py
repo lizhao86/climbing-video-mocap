@@ -281,13 +281,13 @@ def aggregate(entries, height_m):
         "places": places(entries),
         "n_unknown_grade": n_unknown_grade(entries),
     })
-    if height_m:
-        totals["total_gain_m"] = round(totals["total_gain_bl"] * height_m, 1)
+    # ⚠️ 不再由 total_gain_bl 换算米数。bl 的单位是**躯干长**（肩中-髋中距）不是身长，
+    # 曾误乘身高放大 3.5 倍；改对系数后仍比实际矮一半（相机仰拍的非线性压缩）。
+    # 2026-07-20 撤下，见 PLAN.md 待办。
 
     tm = sums(month_entries)
     tm["honors"] = honors(month_entries)
-    if height_m:
-        tm["total_gain_m"] = round(tm["total_gain_bl"] * height_m, 1)
+
     return totals, tm
 
 
