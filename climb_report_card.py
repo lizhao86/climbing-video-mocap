@@ -956,34 +956,19 @@ def main():
 
     # 行文原则（老板 2026-07-17：「行文能不能简洁，用词简单」）：
     # 短句、常用词、一句话说一件事。不要「——」串下去，不要为了气势加修辞。
-    takes = []
-    if stuck:
-        sp = (f"{min(c['t'] for c in stuck):.0f}–{max(c['t'] for c in stuck):.0f} 秒"
-              if len(stuck) > 1 else f"{stuck[0]['t']:.0f} 秒")
-        takes.append(f"<b>先看 {sp}。</b>你卡在这里。不是拉不动，是没想好下一步。")
-    else:
-        takes.append("<b>全程没卡壳。</b>没有特别长的停顿，也没在同一高度反复试探。")
-    if v2["bent_arm"]["n"]:
-        wb = max(bents, key=lambda b: b["dur_s"])
-        takes.append(f"<b>{wb['start_s']:.0f}–{wb['end_s']:.0f} 秒锁臂 "
-                     f"{wb['dur_s']:.1f} 秒</b>（平均 {wb['mean_elbow_deg']:.0f}°）。"
-                     f"正好是卡点那一段。想 beta 的时候先把手臂放直，前臂能省下来。")
-    # 停顿不再打「果断/犹豫」标签（2026-07-18 决策：21 项研究的系统综述说高手静止
-    # 占比反而更高——停顿被用来主动恢复和看路，把停顿量当坏事报是错的解读框架。
-    # 「攀爬效率」同日砍掉：横移线上直接失真，意义无从解释。见 docs/2026-07-18 决策文档。
-    fl = v2.get("fluency") or {}
-    if fl.get("gie") is not None:
-        takes.append(f"<b>轨迹熵 {fl['gie']:.2f}</b>。重心一共走了 {fl['path_len_bl']:.1f} 身长"
-                     f"（这条线的外框只有 {fl['hull_perim_bl']:.1f}）。数字本身没有好坏——"
-                     f"下次再爬同一条线，这个数降了，就是走得更顺了。")
+    # 页尾原有「下次记住这几件事」总结段，2026-07-20 整段删除——卡点、锁臂、流畅度、
+    # 左右分布这四条结论各自的区块里都已经讲过一遍（老板：「这整段没看出来有啥意思，
+    # 结论在其他 section 都说了，何必重新说一遍」）。信息层级重排后每个区块都有自己的
+    # 结论行，总结段就成了纯冗余。
+    # 唯一别处没有的是**左右偏向的建议**（其它区块只给了百分比），并进左右均衡区块。
     arm, leg = v1["left_arm_usage_pct"], v1["left_leg_usage_pct"]
     imb = max(abs(arm - 50), abs(leg - 50))
+    balance_tip = ""
     if imb >= 10:   # 阈值 12 会漏掉 IMG_6152 的 61/39（偏差 11）——那已经是 1.6 倍差距了
         w_ = "手" if abs(arm - 50) >= abs(leg - 50) else "脚"
         p_ = arm if w_ == "手" else leg
-        takes.append(f"<b>{w_}上偏{'左' if p_ > 50 else '右'}，{p_}%。</b>"
-                     f"多找{'右' if p_ > 50 else '左'}{w_}点，两边能匀一些。")
-    take_html = "".join(f'<div class="take">{x}</div>' for x in takes)
+        balance_tip = (f'<p class="lead">{w_}上偏{"左" if p_ > 50 else "右"}，{p_}%。'
+                       f'多找{"右" if p_ > 50 else "左"}{w_}点，两边能匀一些。</p>')
     card_head = sidecar_header(A.out, A.base)
 
     # 全页口径挂在主标题旁边，不再在页尾摊一大段
@@ -1039,7 +1024,6 @@ def main():
         "不看意图就把停顿当毛病，是典型误读。难线本来也该停得多、走得绕。"
         "<b>唯一能比的是同一条线复爬的趋势</b>：四项一起降，说明这条线练顺了。",
         minor=True)
-    h2_takes = sec_h2("下次记住这几件事")
 
     # 净上升换算成米：乘**躯干长**（肩中-髋中距），不是身高——曾误乘身高放大 3.5 倍。
     # ⚠️ 这个数已知偏保守：相机仰拍会压缩高处，IMG_6321 老板确认墙高 10m，骨架只推出
@@ -1419,6 +1403,7 @@ td.empty{{color:var(--ink3)}}
   </table>
 
   {h2_balance}
+  {balance_tip}
   <div class="two">
     <div>
       <div class="lbl">左右手用力分布</div>
@@ -1443,8 +1428,6 @@ td.empty{{color:var(--ink3)}}
   {h2_split}
   <div class="tlbox">{split_svg}</div>
 
-  {h2_takes}
-  {take_html}
 </div>
 
 {HOVER_JS}'''
