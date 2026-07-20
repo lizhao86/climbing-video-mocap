@@ -1028,6 +1028,15 @@ def main():
     h2_split = sec_h2(
         "时间构成", f"起攀 → 完攀 共 {C['climb_time_s']:.1f}s",
         split_note + "这几个占比没有「应该是多少」的标准，只做记录，不打分。", minor=True)
+    h2_fluency = sec_h2(
+        "流畅度", "四项都是越低越好",
+        "攀岩研究里流畅度是**四个指标**，不是一个数（Seifert 2014、Cordier 1993 一脉）："
+        "完攀用时、静止占比、几何熵、归一化 jerk。"
+        "<b>路径绕度</b>是重心走过的路除以「套住这些路的橡皮筋周长」——完美直上等于 0，"
+        "来回试探就升高。<b>轨迹抖动</b>看的是加速度的变化率，动作断续会升高。"
+        "⚠️ <b>这四个数都不能跨路线比。</b>难线本来就该停得多、走得绕。"
+        "只在两种时候有用：同一条线复爬对比，或者同一个人跨时间看趋势。",
+        minor=True)
     h2_takes = sec_h2("下次记住这几件事")
 
     # 净上升换算成米：乘**躯干长**（肩中-髋中距），不是身高——曾误乘身高放大 3.5 倍。
@@ -1058,9 +1067,30 @@ def main():
         else:
             vd.append("。")
     verdict = "".join(vd)
-    # KPI 第 3 格：流畅度。fluency 缺失（老 json 没重跑）时显示 —，不挡整卡生成
-    _g = (v2.get("fluency") or {}).get("gie")
-    gie_str = f"{_g:.2f}" if _g is not None else '—'
+    # ── 流畅度：学界四指标（Seifert 2014 / Cordier 1993 一脉）────────────────
+    # 完攀用时 + 静止占比(IR) + 几何熵(GIE) + 归一化 jerk，**四个都是越低越好**。
+    # 2026-07-20 之前只把 GIE 一项叫「流畅度」摆进 KPI——四分之一冒充全部，
+    # 而且挑的偏偏是最不直观、跨路线还不可比的那个（老板：「你确定 GIE Jerk
+    # 又不用啦？」）。现在 KPI 放最直观的静止占比，四项另开区块并列。
+    _fl = v2.get("fluency") or {}
+    _rt = v2.get("ratios") or {}
+    _g = _fl.get("gie")
+    gie_str = f"{_g:.2f}" if _g is not None else "—"
+    _j = _fl.get("log_norm_jerk")
+    jerk_str = f"{_j:.1f}" if _j is not None else "—"
+    _mv = _rt.get("move_pct")
+    still_pct = round(100 - _mv, 1) if _mv is not None else None
+    still_str = f"{still_pct:.0f}" if still_pct is not None else "—"
+
+    fluency_tiles = "".join(
+        f'<div class="mv-tile"><div class="mv-n mono">{v}</div>'
+        f'<div class="mv-name">{lab}</div><div class="mv-side">{sub}</div></div>'
+        for v, lab, sub in [
+            (f"{C['climb_time_s']:.1f}<span class=\"fu\">秒</span>", "完攀用时", "起攀到最高点"),
+            (f"{still_str}<span class=\"fu\">%</span>", "静止占比", "停着不动的时间"),
+            (gie_str, "路径绕度", "重心走的路比外框长几倍"),
+            (jerk_str, "轨迹抖动", "动作顺不顺"),
+        ])
 
     # ── 动作记录（识别窄版）：只陈列 conf≥medium，不解读——判断留给人。
     # cross/heel_hook 是 low（左右标签/脚跟点不可靠，抽验有误报），刻意不上卡。
@@ -1265,6 +1295,8 @@ h2.minor .cnt{{letter-spacing:.06em}}
   color:var(--accent);font-variant-numeric:tabular-nums}}
 .mv-name{{font-size:14px;font-weight:600;margin-top:8px}}
 .mv-side{{font-size:12px;color:var(--ink2);margin-top:3px}}
+.mv-n .fu{{font-size:.42em;font-weight:500;color:var(--ink3);margin-left:.22em;
+  letter-spacing:0}}
 .mv-ref{{font-size:10px;color:var(--ink3);margin-top:5px}}
 .mv-track{{position:relative;height:34px;margin-top:6px}}
 .mv-line{{position:absolute;top:16px;left:0;right:0;height:1px;background:var(--line)}}
@@ -1354,8 +1386,8 @@ td.empty{{color:var(--ink3)}}
       <div class="k">完攀用时</div><div class="s">{C['start_s']:.1f} → {C['end_s']:.1f}s</div></div>
     <div class="kpi"><div class="n">{gain_val}<span class="u">{gain_unit}</span></div>
       <div class="k">净上升</div><div class="s">{gain_sub}</div></div>
-    <div class="kpi"><div class="n">{gie_str}</div>
-      <div class="k">流畅度</div><div class="s">越低越顺 · 只跟这条线的自己比</div></div>
+    <div class="kpi"><div class="n">{still_str}<span class="u">%</span></div>
+      <div class="k">静止占比</div><div class="s">停着不动的时间</div></div>
     <div class="kpi"><div class="n">{len(stuck)}<span class="u">处</span></div>
       <div class="k">卡点</div><div class="s">最值得回看的时段</div></div>
   </div>
@@ -1399,6 +1431,9 @@ td.empty{{color:var(--ink3)}}
         <span>右腿 {100-v1['left_leg_usage_pct']}%</span></div>
     </div>
   </div>
+
+  {h2_fluency}
+  <div class="mv-tiles">{fluency_tiles}</div>
 
   {h2_prep}
   <div class="tlbox">{prep_svg}</div>
