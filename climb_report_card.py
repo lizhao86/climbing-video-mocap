@@ -241,13 +241,22 @@ def grab_shots(video, times, boxes, outdir, tag):
     return jpgs, mp4s, offs
 
 
-def load_height_m():
-    """读项目根 账本配置.json 的身高。填了就能把身长换算成米。"""
+def load_torso_m():
+    """读项目根 账本配置.json → 躯干长（米）。
+
+    ⚠️ 换算爬升要乘**躯干长**（肩中-髋中距），不是身高——body_scale 的定义就是
+    肩中到髋中的距离。2026-07-20 之前误乘身高，把爬升放大了 3.5 倍。
+    口径与 climb_journal.torso_len_m 保持一致（同一个 0.29 系数）。
+    """
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "账本配置.json")
     try:
         with open(p, encoding="utf-8") as f:
-            h = json.load(f).get("身高_m")
-        return float(h) if h else None
+            cfg = json.load(f)
+        t = cfg.get("躯干长_m")
+        if t:
+            return float(t)
+        h = cfg.get("身高_m")
+        return float(h) * 0.29 if h else None
     except (ValueError, OSError, TypeError):
         return None
 
@@ -1021,14 +1030,19 @@ def main():
         split_note + "这几个占比没有「应该是多少」的标准，只做记录，不打分。", minor=True)
     h2_takes = sec_h2("下次记住这几件事")
 
-    # 净上升只报相对量，不换算米数。2026-07-20 实测：单目固定机位恢复不了绝对高度
-    # ——IMG_6321 老板确认墙高 10m，骨架推出来只有 4.7m。原因是相机仰拍，图像 y 与
-    # 真实高度非线性（高处被压缩），而躯干投影只补偿了「人变小」那一层。
-    # 逐帧局部尺度积分与全局中位数数学上等价（实测差 1%），修不了。见 PLAN.md 待办。
-    # ⚠️ 单位是**躯干长**（肩中-髋中距），不是身长——曾误当身长乘身高，放大了 3.5 倍。
-    gain_val = f"{C['net_gain_bl']:.2f}"
-    gain_unit = "躯干"
-    gain_sub = "起攀点 → 最高点"
+    # 净上升换算成米：乘**躯干长**（肩中-髋中距），不是身高——曾误乘身高放大 3.5 倍。
+    # ⚠️ 这个数已知偏保守：相机仰拍会压缩高处，IMG_6321 老板确认墙高 10m，骨架只推出
+    # 4.7m。逐帧局部尺度积分与全局中位数数学上等价（实测差 1%），修不了。
+    # 老板 2026-07-20 决定先留着，等 high wall 素材再评估，见 PLAN.md 待办。
+    TORSO_M = load_torso_m()
+    if TORSO_M:
+        gain_val = f"{C['net_gain_bl'] * TORSO_M:.1f}"
+        gain_unit = "米"
+        gain_sub = "起攀点 → 最高点 · 偏保守"
+    else:
+        gain_val = f"{C['net_gain_bl']:.2f}"
+        gain_unit = "躯干"
+        gain_sub = "起攀点 → 最高点"
 
     # 开场白只讲这条线上真实发生的事，不外推到「你这个人怎么样」
     vd = [f"<b>{C['climb_time_s']:.1f} 秒</b>完攀，净上升 <b>{C['net_gain_bl']:.2f} 身长</b>。"]

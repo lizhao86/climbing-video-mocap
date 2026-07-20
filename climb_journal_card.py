@@ -60,16 +60,19 @@ def fmt_time(sec):
     return f"{h} 小时 {m:02d} 分"
 
 
-def fmt_gain(bl, height_m):
-    """净上升只报相对量。单位是**躯干长**（肩中-髋中距），不是身长。
+def fmt_gain(bl, torso_m):
+    """净上升 → (数值, 单位)。填了身高就换算成米。
 
-    2026-07-20 实测：单目固定机位恢复不了绝对高度。曾把 bl 当身长乘身高报米数，
-    IMG_6152 抱石报出 7.1 米（实际 2 米上下）。改对系数后 IMG_6321 报 4.7 米，
-    而老板确认那面墙有 10 米——差的那一倍是相机仰拍造成的非线性压缩，算法修不了。
-    米数等改进后再上，见 PLAN.md 待办。height_m 暂时不用。
+    ⚠️ bl 的单位是**躯干长**（肩中-髋中距 ≈ 0.29×身高），不是身长。
+    2026-07-20 之前误当身长乘身高，把爬升放大了 3.5 倍（IMG_6152 报成 7.1 米，
+    实际 2 米上下）。
+    ⚠️ 米数已知偏保守：相机仰拍会压缩高处，IMG_6321 实测墙高 10m 只推出 4.7m。
+    老板决定先留着，等 high wall 素材再评估算法，见 PLAN.md 待办。
     """
     if bl is None:
         return "—", ""
+    if torso_m:
+        return f"{bl * torso_m:.1f}", "米"
     return f"{bl:.1f}", "躯干"
 
 
@@ -127,7 +130,7 @@ def honor_block(j):
 def mileage_block(j):
     """里程：累计爬升 / 在墙时长 / 出手次数 / 爬岩天数。"""
     t = j["totals"]
-    gain, gunit = fmt_gain(t.get("total_gain_bl"), j.get("height_m"))
+    gain, gunit = fmt_gain(t.get("total_gain_bl"), j.get("torso_m"))
     secs = t.get("total_climb_time_s") or 0
     if secs >= 3600:
         tval, tunit = f"{secs / 3600:.1f}", "小时"
@@ -285,7 +288,7 @@ def catalog(entries, height_m):
 
 def build_page(j):
     entries = j.get("entries", [])
-    height_m = j.get("height_m")
+    height_m = j.get("torso_m")   # 换算系数是躯干长，不是身高
     t = j["totals"]
 
     secs = t.get("total_climb_time_s") or 0

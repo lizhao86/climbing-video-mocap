@@ -41,7 +41,22 @@ SIDECAR_TEMPLATE = {
     "视频指纹": "",      # climb_intake.py 自动填，判重用
     "登记时间": "",
 }
-CONFIG_TEMPLATE = {"身高_m": None, "体重_kg": None}
+CONFIG_TEMPLATE = {"身高_m": None, "体重_kg": None, "躯干长_m": None}
+
+# ⚠️ 爬升的归一化单位是 body_scale = ||肩中点 − 髋中点||，也就是**躯干长**，
+# 不是身高。J1 到 2026-07-20 一直误乘身高，把爬升放大了约 3.5 倍
+# （IMG_6152 报成 7.1 米，实际约 2 米）。躯干长按人体测量学 ≈ 0.29×身高，
+# 想更准就在 账本配置.json 填「躯干长_m」实测值。
+TORSO_RATIO = 0.29
+
+
+def torso_len_m(cfg):
+    """→ 躯干长（米），没身高也没实测值就返回 None（那就只能报躯干数）。"""
+    t = cfg.get("躯干长_m")
+    if t:
+        return float(t)
+    h = cfg.get("身高_m")
+    return float(h) * TORSO_RATIO if h else None
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -249,7 +264,7 @@ def n_unknown_grade(entries):
                if (e.get("grade") or "").strip() and not e.get("grade_scale"))
 
 
-def aggregate(entries, height_m):
+def aggregate(entries, torso_m):
     dates = [e["date"] for e in entries if e["date"]]
     this_month = datetime.now().strftime("%Y-%m")
     month_entries = [e for e in entries if (e["date"] or "").startswith(this_month)]
@@ -281,12 +296,16 @@ def aggregate(entries, height_m):
         "places": places(entries),
         "n_unknown_grade": n_unknown_grade(entries),
     })
-    # ⚠️ 不再由 total_gain_bl 换算米数。bl 的单位是**躯干长**（肩中-髋中距）不是身长，
-    # 曾误乘身高放大 3.5 倍；改对系数后仍比实际矮一半（相机仰拍的非线性压缩）。
-    # 2026-07-20 撤下，见 PLAN.md 待办。
+    # 米数：乘**躯干长**，不是身高（曾误乘身高放大 3.5 倍）。
+    # ⚠️ 这个数已知偏保守——相机仰拍会压缩高处，IMG_6321 实测墙高 10m 只推出 4.7m。
+    # 老板 2026-07-20 决定先留着，等 high wall 素材再评估算法，见 PLAN.md 待办。
+    if torso_m:
+        totals["total_gain_m"] = round(totals["total_gain_bl"] * torso_m, 1)
 
     tm = sums(month_entries)
     tm["honors"] = honors(month_entries)
+    if torso_m:
+        tm["total_gain_m"] = round(tm["total_gain_bl"] * torso_m, 1)
 
     return totals, tm
 
@@ -327,7 +346,9 @@ def main():
         with open(cfg_path, "w", encoding="utf-8") as f:
             json.dump(CONFIG_TEMPLATE, f, ensure_ascii=False, indent=2)
         print("已生成 %s 模板（身高_m 填了才有米数）" % CONFIG_PATH)
-    height_m = load_json(cfg_path).get("身高_m")
+    cfg = load_json(cfg_path)
+    height_m = cfg.get("身高_m")
+    torso_m = torso_len_m(cfg)
 
     mdir = os.path.join(ROOT, MATERIAL_DIR)
     entries = []
@@ -343,11 +364,12 @@ def main():
             skipped.append(name)
     entries.sort(key=lambda e: (e["date"] or "", e["base"]))
 
-    totals, this_month = aggregate(entries, height_m)
+    totals, this_month = aggregate(entries, torso_m)
     journal = {
         "generated_by": "climb_journal.py",
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "height_m": height_m,
+        "torso_m": torso_m,
         "totals": totals,
         "this_month": this_month,
         "entries": entries,
