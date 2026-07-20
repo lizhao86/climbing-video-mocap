@@ -241,6 +241,17 @@ def grab_shots(video, times, boxes, outdir, tag):
     return jpgs, mp4s, offs
 
 
+def load_height_m():
+    """读项目根 账本配置.json 的身高。填了就能把身长换算成米。"""
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "账本配置.json")
+    try:
+        with open(p, encoding="utf-8") as f:
+            h = json.load(f).get("身高_m")
+        return float(h) if h else None
+    except (ValueError, OSError, TypeError):
+        return None
+
+
 def load_sidecar(out_dir):
     """读 <素材文件夹>/线路.json → dict。没有或坏了都返回 {}。"""
     path = os.path.join(out_dir, "线路.json")
@@ -680,8 +691,8 @@ def main():
     hotspots = ""
     for c in crux:
         kind = {"hesitation": "犹豫", "repeat": "反复试探",
-                "power": c.get("driver", "姿态极端")}[c["kind"]]
-        label = ("卡点 · " if c["source"] == "v2a" else "姿态极端 · ") + kind
+                "power": c.get("driver", "发力点")}[c["kind"]]
+        label = ("卡点 · " if c["source"] == "v2a" else "发力点 · ") + kind
         # 难点热区：覆盖高度曲线 + 分段条，不伸到肘角那一行（留给弯臂热区）
         hotspots += hotspot(c["t"], "stuck" if c["source"] == "v2a" else "power",
                             (f'{c["t"]:.1f}s', label), c.get("img"), c.get("clip"),
@@ -1010,6 +1021,17 @@ def main():
         split_note + "这几个占比没有「应该是多少」的标准，只做记录，不打分。", minor=True)
     h2_takes = sec_h2("下次记住这几件事")
 
+    # 净上升：填了身高就报米数，没填退回身长（老板 2026-07-20 填了 1.8m）
+    HEIGHT_M = load_height_m()
+    if HEIGHT_M:
+        gain_val = f"{C['net_gain_bl'] * HEIGHT_M:.1f}"
+        gain_unit = "米"
+        gain_sub = f"起攀点 → 最高点 · 按身高 {HEIGHT_M:.2f}m 换算"
+    else:
+        gain_val = f"{C['net_gain_bl']:.2f}"
+        gain_unit = "身长"
+        gain_sub = "起攀点 → 最高点"
+
     # 开场白只讲这条线上真实发生的事，不外推到「你这个人怎么样」
     vd = [f"<b>{C['climb_time_s']:.1f} 秒</b>完攀，净上升 <b>{C['net_gain_bl']:.2f} 身长</b>。"]
     if stuck:
@@ -1318,10 +1340,10 @@ td.empty{{color:var(--ink3)}}
   <div class="kpis">
     <div class="kpi hi"><div class="n">{C['climb_time_s']:.1f}<span class="u">s</span></div>
       <div class="k">完攀用时</div><div class="s">{C['start_s']:.1f} → {C['end_s']:.1f}s</div></div>
-    <div class="kpi"><div class="n">{C['net_gain_bl']:.2f}<span class="u">身长</span></div>
-      <div class="k">净上升</div><div class="s">起攀点 → 最高点</div></div>
+    <div class="kpi"><div class="n">{gain_val}<span class="u">{gain_unit}</span></div>
+      <div class="k">净上升</div><div class="s">{gain_sub}</div></div>
     <div class="kpi"><div class="n">{gie_str}</div>
-      <div class="k">流畅度（轨迹熵）</div><div class="s">越低越顺 · 只跟这条线的自己比</div></div>
+      <div class="k">流畅度</div><div class="s">越低越顺 · 只跟这条线的自己比</div></div>
     <div class="kpi"><div class="n">{len(stuck)}<span class="u">处</span></div>
       <div class="k">卡点</div><div class="s">最值得回看的时段</div></div>
   </div>
@@ -1384,7 +1406,7 @@ td.empty{{color:var(--ink3)}}
     print(f"✅ {A.base} 报告卡 → {out_html}")
     print(f"   完攀 {C['climb_time_s']:.1f}s（{C['start_s']:.1f}→{C['end_s']:.1f}）"
           f" · 净上升 {C['net_gain_bl']:.2f}bl · 检出 {det_rate}")
-    print(f"   卡住型 {len(stuck)} 处 · 姿态极端 {len(power)} 处 · 弯臂 {len(bents)} 段"
+    print(f"   卡点 {len(stuck)} 处 · 发力点 {len(power)} 处 · 锁臂 {len(bents)} 段"
           f" · 真休息 {v2['rests']['n']} 次")
     clips = cclips + bclips
     mb = sum(os.path.getsize(os.path.join(ASSET, x)) for x in clips if x) / 1048576
