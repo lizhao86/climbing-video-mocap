@@ -138,7 +138,7 @@ def mileage_block(j):
         tval, tunit = f"{secs / 60:.0f}", "分钟"
     cells = [(gain, gunit, "累计爬升"),
              (tval, tunit, "在墙时长"),
-             (f'{t.get("total_events") or 0}', "次", "累计出手"),
+             (f'{t.get("total_hand") or 0}', "次", "累计出手"),
              (f'{t.get("n_days") or 0}', "天", "爬岩天数")]
     inner = "".join(
         f'<div class="stat"><div class="stat-num">{esc(v)}'

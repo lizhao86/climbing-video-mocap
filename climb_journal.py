@@ -221,6 +221,10 @@ def collect_entry(folder):
         "climb_time_s": comp.get("climb_time_s"),
         "net_gain_bl": comp.get("net_gain_bl"),
         "n_events": seg.get("n_events"),
+        # events 里手脚各半，全叫「出手」是把踩点也算进去了（2026-07-20 老板顶回）。
+        # 拆开统计，账本页只把**手**的那半报成出手。
+        "n_hand": sum(1 for e in (seg.get("events") or []) if "手" in (e.get("limb") or "")),
+        "n_foot": sum(1 for e in (seg.get("events") or []) if "脚" in (e.get("limb") or "")),
         "n_crux": mv2.get("crux", {}).get("n"),
         "moves": count_moves(rec),
         "report_card": card_rel,
@@ -275,6 +279,8 @@ def aggregate(entries, torso_m):
             "total_climb_time_s": round(sum(e["climb_time_s"] or 0 for e in es), 1),
             "total_gain_bl": round(sum(e["net_gain_bl"] or 0 for e in es), 2),
             "total_events": sum(e["n_events"] or 0 for e in es),
+            "total_hand": sum(e.get("n_hand") or 0 for e in es),
+            "total_foot": sum(e.get("n_foot") or 0 for e in es),
         }
 
     moves_collect = {}
@@ -380,9 +386,9 @@ def main():
     print("journal.json: %d 条记录 → %s" % (len(entries), OUT_PATH))
     if skipped:
         print("跳过（无 metrics_v2）: %s" % ", ".join(skipped))
-    print("累计: 爬升 %.2fbl | 在墙 %.1fs | 出手 %d 次 | 天数 %d | 最长连续 %d 周(当前 %d)"
+    print("累计: 爬升 %.2fbl | 在墙 %.1fs | 出手 %d 次(手) | 天数 %d | 最长连续 %d 周(当前 %d)"
           % (totals["total_gain_bl"], totals["total_climb_time_s"],
-             totals["total_events"], totals["n_days"],
+             totals["total_hand"], totals["n_days"],
              totals["streak_weeks_best"], totals["streak_weeks_current"]))
     for e in entries:
         print("  %s  %-10s %s gain=%.2fbl climb=%.1fs events=%s card=%s"

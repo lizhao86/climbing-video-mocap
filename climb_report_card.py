@@ -28,7 +28,7 @@ def warnings_ignore():
         yield
 
 # ── 设计令牌（与 HTML 里的 CSS 变量同源）────────────────────────────
-C_MOVE   = "#e08a42"   # 出手移动（= 全页强色，chrome 与数据同一含义：动作）
+C_MOVE   = "#e08a42"   # 身体在动（重心位移段，不是出手；出手见 events）
 C_REST   = "#5fa07a"   # 真休息
 C_ADJUST = "#5a6070"   # 找点调整
 C_STUCK  = "#45a8c4"   # 卡住型难点（v2a）
@@ -741,7 +741,7 @@ def main():
     # 发力型是体力开销的记录，压成紧凑一排即可。
     def card(c, cls):
         if c["source"] == "v2a":
-            tag = "卡点 · " + {"hesitation": "起手前久停", "repeat": "原地反复出手"}[c["kind"]]
+            tag = "卡点 · " + {"hesitation": "起手前久停", "repeat": "原地磨"}[c["kind"]]
         else:
             # 不再叫「发力型 · 动作剧烈」——见上方 v1_terms 的拆解注释。
             # 也去掉了「占 X%」：那是公式内部的分量占比，对读者是黑话（老板看不懂）。
@@ -828,7 +828,7 @@ def main():
     SW, SH = 1200, 54
     xacc, split = 0.0, ""
     # 条内的百分比字色随底色走：琥珀/绿够亮，压深色字才看得清；石板灰上必须用亮字
-    for lab, key, c_, ink in [("出手爬升", "move_s", C_MOVE, "#0b0c0f"),
+    for lab, key, c_, ink in [("身体在动", "move_s", C_MOVE, "#0b0c0f"),
                               ("回血", "rest_s", C_REST, "#0b0c0f"),
                               ("找点调整", "adjust_s", C_ADJUST, "#e9ecf1")]:
         secs = R[key]
@@ -984,7 +984,7 @@ def main():
     h2_stuck = sec_h2(
         "卡点", f"{len(stuck)} 处",
         "两种情况会被标出来：起手前停顿超过中位数的 "
-        f"{v2['params']['PREP_CRUX_K']} 倍，或者在同一高度反复出手却没上升。"
+        f"{v2['params']['PREP_CRUX_K']} 倍，或者在同一高度反复动却没上升。"
         "<b>画面鼠标移上去会播</b>，是该时刻前 1 秒到后 2 秒的片段。")
     h2_rhythm = sec_h2(
         "整条线的节奏", f"起攀 {C['start_s']:.1f}s → 完攀 {C['end_s']:.1f}s",
@@ -1385,7 +1385,7 @@ td.empty{{color:var(--ink3)}}
   <div class="tlbox">
     <div class="tlwrap">{timeline_svg}{hotspots}</div>
     <div class="legend">
-      <span><i style="background:{C_MOVE}"></i>出手移动</span>
+      <span><i style="background:{C_MOVE}"></i>身体在动</span>
       <span><i style="background:{C_REST}"></i>回血</span>
       <span><i style="background:{C_ADJUST}"></i>找点</span>
       <span><i style="background:{C_STUCK}"></i>卡点</span>
