@@ -207,7 +207,11 @@ def timeline_svg(entries, height_m):
 # ---------------- 线路目录 ----------------
 
 def entry_row(e, height_m):
-    name = e.get("route_name") or e["base"]
+    # 标题用「这条线是什么」：野外用线路名，室内用岩馆名。片名（IMG_6152）是文件名
+    # 不是身份，退成副行小字（老板 2026-07-20）。两者都没有才退回片名。
+    name = (e.get("route_name") or "").strip() or (e.get("place") or "").strip() or e["base"]
+    sub = ((e.get("place") or "").strip()
+           if (e.get("route_name") or "").strip() else e["base"])
     date = esc(e.get("date") or "—")
     if e.get("date_source") == "mtime":
         date += '<span class="qmark" title="按文件时间推断，跟 Claude 说一声就能改">?</span>'
@@ -226,7 +230,7 @@ def entry_row(e, height_m):
     cells = (
         f'<div class="c-date mono">{date}</div>'
         f'<div class="c-name"><b>{esc(name)}</b>'
-        f'<span class="c-place">{esc(e.get("place") or "")}</span></div>'
+        f'<span class="c-place mono">{esc(sub)}</span></div>'
         f'<div class="c-tags">{"".join(tags)}</div>'
         f'<div class="c-num mono">{g}<span class="cu">{gu}</span></div>'
         f'<div class="c-num mono">{fmt_time(e.get("climb_time_s"))}</div>'

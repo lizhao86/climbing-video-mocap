@@ -264,22 +264,47 @@ def is_rope_route(sc):
     return (sc.get("类型") or "").strip() in ("顶绳", "先锋")
 
 
-def sidecar_header(out_dir):
-    """读 <素材文件夹>/线路.json → 返回页眉 HTML。没有 sidecar 就只给返回链接。"""
-    sc = load_sidecar(out_dir)
-    chips = []
-    if sc:
-        for key in ("类型", "难度", "地点", "线路名"):
-            val = (sc.get(key) or "").strip()
-            if val:
-                chips.append(f'<span class="hchip">{val}</span>')
-        if sc.get("完攀") is True:
-            chips.append('<span class="hchip sent">完攀 ✓</span>')
-        elif sc.get("完攀") is False:
-            chips.append('<span class="hchip unsent">未完攀</span>')
+def sidecar_header(out_dir, base):
+    """页眉：返回账本 + 视频文件名（文件名要留着，但它不是这条线的身份）。"""
     return ('<div class="cardhead">'
             '<a class="back" href="../../攀岩账本.html">← 返回账本</a>'
-            f'<div class="hchips">{"".join(chips)}</div></div>')
+            f'<span class="fname mono">{base}</span></div>')
+
+
+def hero_block(sc, base):
+    """标题区。
+
+    标题用「这条线是什么」——野外用线路名，室内用岩馆名；难度做徽章。
+    片名（IMG_6152）是文件名不是身份，退到页眉角落
+    （老板 2026-07-20：「都告诉你时间地点难度了，不如写那些东西」）。
+    sidecar 还没填时退回片名当标题，不至于无标题。
+    """
+    name = (sc.get("线路名") or "").strip()
+    place = (sc.get("地点") or "").strip()
+    title = name or place or base
+    sub = place if (name and place) else ""
+
+    meta = []
+    d = (sc.get("日期") or "").strip()
+    if d:
+        meta.append(d)
+    t = (sc.get("类型") or "").strip()
+    if t:
+        meta.append(t)
+    if sc.get("完攀") is True:
+        meta.append("完攀")
+    elif sc.get("完攀") is False:
+        meta.append("未完攀")
+    if not meta:
+        meta.append("这条线还没登记，跟 Claude 说一句就记上")
+
+    grade = (sc.get("难度") or "").strip()
+    badge = f'<div class="gbadge mono">{grade}</div>' if grade else ""
+    subline = f'<div class="hsub">{sub}</div>' if sub else ""
+
+    return (f'<div class="eyebrow mono">{" · ".join(meta)}</div>'
+            f'<div class="titlerow"><div class="titlebox"><h1>{title}</h1>{subline}</div>'
+            f'{badge}</div>')
 
 
 def main():
@@ -904,8 +929,8 @@ def main():
         takes.append(f"<b>{w_}上偏{'左' if p_ > 50 else '右'}，{p_}%。</b>"
                      f"多找{'右' if p_ > 50 else '左'}{w_}点，两边能匀一些。")
     take_html = "".join(f'<div class="take">{x}</div>' for x in takes)
-    route_badge = f' · {A.route}' if A.route else ""
-    card_head = sidecar_header(A.out)
+    card_head = sidecar_header(A.out, A.base)
+    hero_html = hero_block(SC, A.base)
 
     # 开场白只讲这条线上真实发生的事，不外推到「你这个人怎么样」
     vd = [f"<b>{C['climb_time_s']:.1f} 秒</b>完攀，净上升 <b>{C['net_gain_bl']:.2f} 身长</b>。"]
@@ -1006,8 +1031,9 @@ body{{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
 /* 字距只给拉丁文——中文加 letter-spacing 会被拉散成"标语体"，很丑 */
 .eyebrow{{font-family:var(--mono);font-size:11px;color:var(--ink3)}}
 .eyebrow .lat{{letter-spacing:.18em;text-transform:uppercase}}
-h1{{font-size:clamp(34px,5.5vw,60px);font-weight:700;letter-spacing:-.035em;margin:8px 0 0;
-  font-family:var(--mono);line-height:1}}
+/* 标题多是中文（岩馆名/线路名），不能用 mono——等宽排中文会散 */
+h1{{font-size:clamp(30px,5vw,54px);font-weight:700;letter-spacing:-.03em;margin:0;
+  line-height:1.05;word-break:break-word}}
 /* 一句话结论是整页最该被读到的文字，字号仅次于标题，用主文字色 */
 .verdict{{font-size:clamp(19px,2.3vw,26px);line-height:1.5;color:var(--ink2);
   max-width:34ch;margin:20px 0 0;text-wrap:pretty}}
@@ -1154,8 +1180,18 @@ td.empty{{color:var(--ink3)}}
 @media(max-width:860px){{.kpis{{grid-template-columns:repeat(2,1fr)}}
   .two{{grid-template-columns:1fr;gap:20px}}}}
 
-.cardhead{{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-          padding:0 0 14px;margin-bottom:10px;border-bottom:1px solid var(--line)}}
+.cardhead{{display:flex;align-items:center;justify-content:space-between;gap:14px;
+          flex-wrap:wrap;padding:0 0 14px;margin-bottom:26px;
+          border-bottom:1px solid var(--line)}}
+.fname{{font-size:11px;color:var(--ink3);letter-spacing:.08em}}
+/* 标题区：线路名/岩馆当标题，难度做徽章，文件名不上标题 */
+.titlerow{{display:flex;align-items:flex-start;justify-content:space-between;
+          gap:20px;margin-top:10px}}
+.titlebox{{min-width:0}}
+.hsub{{font-size:15px;color:var(--ink2);margin-top:6px}}
+.gbadge{{flex:none;background:var(--accent);color:var(--acc-ink);font-weight:700;
+        font-size:clamp(22px,3.4vw,34px);line-height:1;letter-spacing:-.02em;
+        padding:12px 16px;border-radius:3px;font-variant-numeric:tabular-nums}}
 .back{{color:var(--ink3);text-decoration:none;font-size:13px}}
 .back:hover{{color:var(--ink)}}
 .hchips{{display:flex;gap:6px;flex-wrap:wrap}}
@@ -1166,8 +1202,7 @@ td.empty{{color:var(--ink3)}}
 
 <div class="wrap">
   {card_head}
-  <div class="eyebrow"><span class="lat">Climb Report</span>{route_badge}</div>
-  <h1>{A.base}</h1>
+  {hero_html}
   <p class="verdict">{verdict}</p>
 
   <div class="kpis">
