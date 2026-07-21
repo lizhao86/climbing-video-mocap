@@ -1119,15 +1119,21 @@ def main():
                 tiles.append(f'<div class="mv-tile"><div class="mv-n mono">{k["n"]}</div>'
                              f'<div class="mv-name">{k["name"]}</div>{side}{ref}</div>')
 
-            # 时序：动作落在攀爬窗口哪个位置。一眼看出是集中在起步还是收尾。
+            # 时序：动作落在攀爬窗口哪个位置。手/脚上色，不悬停也看得出分布；
+            # 悬停出即时浮层（原来是浏览器原生 title——延迟慢、点击无反应、触屏没有，
+            # 加上问号光标误导成可点，老板反馈是 bug）。
             span = max(t1 - t0, 0.001)
             dots = "".join(
-                f'<div class="mv-dot" style="left:{100 * (m["t_s"] - t0) / span:.2f}%" '
-                f'title="{m["t_s"]:.1f}s · {m["name_zh"]} · {m["limb"]}"></div>'
+                f'<span class="mv-dot{" foot" if "脚" in (m["limb"] or "") else ""}" '
+                f'style="left:{100 * (m["t_s"] - t0) / span:.2f}%">'
+                f'<span class="mv-tip mono">{m["t_s"]:.1f}s · {m["limb"]} · {m["name_zh"]}</span>'
+                f'</span>'
                 for m in ok_moves)
             seq = (f'<div class="mv-track"><div class="mv-line"></div>{dots}</div>'
                    f'<div class="mv-axis mono"><span>{t0:.0f}s</span>'
-                   f'<span>起攀 → 完攀</span><span>{t1:.0f}s</span></div>') if ok_moves else ""
+                   f'<span>起攀 → 完攀</span><span>{t1:.0f}s</span></div>'
+                   f'<div class="mv-legend mono"><span class="ld"></span>手'
+                   f'<span class="ld foot"></span>脚 · 悬停看动作</div>') if ok_moves else ""
 
             body = (f'<div class="mv-tiles">{"".join(tiles)}</div>{seq}' if ok_moves else
                     '<p class="sub">这条线上没识别出教材动作。</p>')
@@ -1303,11 +1309,25 @@ h2 .cnt{{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:40
 .mv-ref{{font-size:10px;color:var(--ink3);margin-top:5px}}
 .mv-track{{position:relative;height:34px;margin-top:6px}}
 .mv-line{{position:absolute;top:16px;left:0;right:0;height:1px;background:var(--line)}}
-.mv-dot{{position:absolute;top:10px;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;
-  background:var(--accent);border:2px solid var(--bg);cursor:help;
+.mv-dot{{position:absolute;top:10px;width:11px;height:11px;margin-left:-5.5px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--bg);
   transition:transform .15s var(--ease)}}
-.mv-dot:hover{{transform:scale(1.5)}}
-.mv-axis{{display:flex;justify-content:space-between;font-size:10px;color:var(--ink3)}}
+.mv-dot.foot{{background:var(--ink3)}}
+.mv-dot:hover{{transform:scale(1.35);z-index:21}}
+/* 悬停即时浮层，替代原生 title */
+.mv-tip{{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);
+  white-space:nowrap;background:var(--surface2);border:1px solid var(--line);border-radius:3px;
+  padding:5px 9px;font-size:11px;color:var(--ink);opacity:0;visibility:hidden;
+  transition:opacity .12s var(--ease);pointer-events:none;z-index:22;
+  box-shadow:0 6px 20px rgba(0,0,0,.5)}}
+.mv-dot:hover .mv-tip{{opacity:1;visibility:visible}}
+.mv-axis{{display:flex;justify-content:space-between;font-size:10px;color:var(--ink3);
+  margin-top:2px}}
+.mv-legend{{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ink3);
+  margin-top:9px}}
+.mv-legend .ld{{width:9px;height:9px;border-radius:50%;background:var(--accent);
+  display:inline-block}}
+.mv-legend .ld.foot{{background:var(--ink3);margin-left:8px}}
 .crux p{{font-size:12.5px;color:var(--ink2);margin:10px 0 0;line-height:1.6}}
 .crux.stuck .tag{{color:var(--stuck);background:color-mix(in srgb,var(--stuck) 15%,transparent)}}
 .crux.power .tag{{color:var(--power);background:color-mix(in srgb,var(--power) 15%,transparent)}}
