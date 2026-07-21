@@ -793,19 +793,13 @@ def main():
     pmed = v2["prep"]["median_s"]
     plim = pmed * v2["params"]["PREP_CRUX_K"]
     BW, BH = 1200, 190
-    BL, BR, BT, BB = 58, 10, 12, 40   # BL 留宽一点，装得下左侧的参考线标签
-    pmax = max([p["prep_s"] for p in preps] + [plim]) * 1.12 if preps else 1
+    BL, BR, BT, BB = 14, 10, 12, 40
+    # 2026-07-20 去掉「中位/难点线」两条参考线——它们是统计黑话，而且「超过难点线」
+    # 那几根跟①卡在哪的「起手前久停」重复。图退成纯节奏条：高的那几根就是犹豫的地方。
+    # over 判定（>plim）仍用来给柱子上色高亮，但不再画线、不再标注。
+    pmax = max([p["prep_s"] for p in preps]) * 1.12 if preps else 1
     bars = ""
     if preps:
-        # 参考线先画，柱子和数值标签后画——反过来会让虚线横穿标签，读不清。
-        # 标签放**左侧留白**（BL 那条 gutter）而不是右侧：右侧会和最后几根柱子的数值标签
-        # 抢位置（IMG_6152 实测 23s 那根的「0.9」直接压在「中位数 0.60s」上）。
-        for val, c_, lab in [(pmed, C_REST, "中位"), (plim, C_STUCK, "难点线")]:
-            y = BH - BB - val / pmax * (BH - BT - BB)
-            bars += (f'<line x1="{BL}" y1="{y:.1f}" x2="{BW-BR}" y2="{y:.1f}" stroke="{c_}" '
-                     f'stroke-width="1" stroke-dasharray="4 4" opacity="0.75"/>'
-                     f'<text x="{BL-6}" y="{y+3.5:.1f}" fill="{c_}" font-size="10" '
-                     f'text-anchor="end">{lab}</text>')
         n = len(preps)
         slot = (BW - BL - BR) / n
         bw = min(slot * 0.62, 54)
@@ -813,9 +807,9 @@ def main():
             cx = BL + slot * (i + 0.5)
             h = p["prep_s"] / pmax * (BH - BT - BB)
             over = p["prep_s"] > plim
-            op = "" if over else ' opacity="0.75"'
-            fill = C_STUCK if over else C_ADJUST
-            lab_fill = "#e9ecf1" if over else "#6b7280"
+            op = "" if over else ' opacity="0.72"'
+            fill = "var(--accent)" if over else C_ADJUST
+            lab_fill = "#F2F4F7" if over else "#5D6675"
             bars += (f'<rect x="{cx-bw/2:.1f}" y="{BH-BB-h:.1f}" width="{bw:.1f}" '
                      f'height="{h:.1f}" fill="{fill}"{op}/>'
                      # 描边光晕：矮柱的数值标签会正好落在中位线上，没有底衬就被虚线穿过
@@ -1013,11 +1007,10 @@ def main():
         "线路本身可能就偏。同一条线多爬几次再比才有意义。")
     h2_prep = sec_h2(
         "出手前的停顿", f"中位数 {pmed:.2f}s · 最长 {v2['prep']['max_s']:.2f}s",
-        "每根柱是一次出手前的停顿，柱下是出手时刻和主导肢体。"
-        f"绿线是中位数 {pmed:.2f}s，青线是难点线（中位数的 "
-        f"{v2['params']['PREP_CRUX_K']} 倍 = {plim:.2f}s），超过青线的算「卡点 · 起手前久停」。"
-        "<b>停顿本身不是坏事</b>——高手停下来的时间反而更多，用来甩手恢复和看下一步。"
-        "值得注意的只有超出青线那个量级的停。")
+        "每根柱是一次出手前停了多久，柱下是出手时刻和主导肢体。"
+        "<b>高的那几根（酸绿）是你明显犹豫的地方。</b>"
+        "停顿本身不是坏事——高手停下来的时间反而更多，用来甩手恢复和看下一步。"
+        "只有明显拖长的那种才值得回看。")
     h2_split = sec_h2(
         "时间构成", f"起攀 → 完攀 共 {C['climb_time_s']:.1f}s",
         split_note + "这几个占比没有「应该是多少」的标准，只做记录，不打分。")
