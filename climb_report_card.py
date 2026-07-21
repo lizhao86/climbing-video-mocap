@@ -291,6 +291,14 @@ def sidecar_header(out_dir, base):
             f'<span class="fname mono">{base}</span></div>')
 
 
+def group_head(num, title, sub):
+    """主题组的分隔标题：大号编号 + 组名 + 一句话说这组回答什么问题。
+    「总-分」结构里，概览之后每个组统领 2 个 h2 区块（老板 2026-07-20）。"""
+    return (f'<div class="grp"><span class="grp-n mono">{num}</span>'
+            f'<div class="grp-tx"><div class="grp-t">{title}</div>'
+            f'<div class="grp-s">{sub}</div></div></div>')
+
+
 def sec_h2(title, cnt="", tip="", minor=False):
     """区块标题。解释性文字收进标题右边的 i 图标，hover 才展开。
 
@@ -525,7 +533,7 @@ def main():
                 which = max(LIMB_ZH, key=lambda k: limb_spd[k][i])
                 v_ = float(limb_spd[which][i])
                 p = pct_rank(v1_allspeed, v_, True)
-                return dom, f"{LIMB_ZH[which]}挥到 {v_:.1f} 身长/秒，全片最快的 {p}%"
+                return dom, f"{LIMB_ZH[which]}挥到 {v_:.1f} 躯干/秒，全片最快的 {p}%"
             v_ = float(v1_acc_mag[i])
             p = pct_rank(v1_acc_mag, v_, True)
             return dom, f"重心猛地变向，全片最急的 {p}%"
@@ -719,7 +727,7 @@ def main():
     <stop offset="0" stop-color="#e9ecf1" stop-opacity="0.16"/>
     <stop offset="1" stop-color="#e9ecf1" stop-opacity="0"/>
   </linearGradient></defs>
-  <text x="{PADL-8}" y="{H_TOP-2}" fill="#6b7280" font-size="9" text-anchor="end">身长</text>
+  <text x="{PADL-8}" y="{H_TOP-2}" fill="#6b7280" font-size="9" text-anchor="end">躯干</text>
   {gridlines}
   <polygon points="{area}" fill="url(#hg)"/>
   <polyline points="{pts}" fill="none" stroke="#e9ecf1" stroke-width="2"
@@ -974,7 +982,7 @@ def main():
     # 全页口径挂在主标题旁边，不再在页尾摊一大段
     hero_html = hero_block(SC, A.base, (
         f"单摄像头、相机不动，用 MediaPipe 估骨架，这条线检出 {det_rate}。"
-        f"长度和速度都用<b>身长</b>（肩中点到髋中点的距离）当单位，"
+        f"长度和速度都用<b>躯干长</b>（肩中点到髋中点的距离）当单位，"
         f"所以换手机、换机位、换人都能比；代价是它看相对趋势，不是绝对测量。"
         f"单目对深度不敏感，主要看画面内的运动。"
         f"起攀时刻先用「手举过肩」定位上墙再算重心——走向岩壁时人在往远处走，"
@@ -1002,17 +1010,17 @@ def main():
         f"手 {v1['left_arm_usage_pct']}/{100 - v1['left_arm_usage_pct']} · "
         f"脚 {v1['left_leg_usage_pct']}/{100 - v1['left_leg_usage_pct']}",
         "按左右肢的活动量分摊，不是真的测力。偏向一边不一定是毛病——"
-        "线路本身可能就偏。同一条线多爬几次再比才有意义。", minor=True)
+        "线路本身可能就偏。同一条线多爬几次再比才有意义。")
     h2_prep = sec_h2(
         "出手前的停顿", f"中位数 {pmed:.2f}s · 最长 {v2['prep']['max_s']:.2f}s",
         "每根柱是一次出手前的停顿，柱下是出手时刻和主导肢体。"
         f"绿线是中位数 {pmed:.2f}s，青线是难点线（中位数的 "
         f"{v2['params']['PREP_CRUX_K']} 倍 = {plim:.2f}s），超过青线的算「卡点 · 起手前久停」。"
         "<b>停顿本身不是坏事</b>——高手停下来的时间反而更多，用来甩手恢复和看下一步。"
-        "值得注意的只有超出青线那个量级的停。", minor=True)
+        "值得注意的只有超出青线那个量级的停。")
     h2_split = sec_h2(
         "时间构成", f"起攀 → 完攀 共 {C['climb_time_s']:.1f}s",
-        split_note + "这几个占比没有「应该是多少」的标准，只做记录，不打分。", minor=True)
+        split_note + "这几个占比没有「应该是多少」的标准，只做记录，不打分。")
     h2_fluency = sec_h2(
         "流畅度", "只跟自己比",
         "攀岩研究里流畅度是**四个指标**，不是一个数："
@@ -1022,8 +1030,7 @@ def main():
         "⚠️ <b>别拿这四个数比水平。</b>Orth 2017 的 21 项系统综述发现，"
         "高水平攀岩者的静止占比<b>反而更高</b>——停下来是在甩手回血和读线，"
         "不看意图就把停顿当毛病，是典型误读。难线本来也该停得多、走得绕。"
-        "<b>唯一能比的是同一条线复爬的趋势</b>：四项一起降，说明这条线练顺了。",
-        minor=True)
+        "<b>唯一能比的是同一条线复爬的趋势</b>：四项一起降，说明这条线练顺了。")
 
     # 净上升换算成米：乘**躯干长**（肩中-髋中距），不是身高——曾误乘身高放大 3.5 倍。
     # ⚠️ 这个数已知偏保守：相机仰拍会压缩高处，IMG_6321 老板确认墙高 10m，骨架只推出
@@ -1040,7 +1047,7 @@ def main():
         gain_sub = "起攀点 → 最高点"
 
     # 开场白只讲这条线上真实发生的事，不外推到「你这个人怎么样」
-    vd = [f"<b>{C['climb_time_s']:.1f} 秒</b>完攀，净上升 <b>{C['net_gain_bl']:.2f} 身长</b>。"]
+    vd = [f"<b>{C['climb_time_s']:.1f} 秒</b>完攀，净上升 <b>{gain_val} {gain_unit}</b>。"]
     if stuck:
         sp = (f"{min(c['t'] for c in stuck):.0f}–{max(c['t'] for c in stuck):.0f} 秒"
               if len(stuck) > 1 else f"{stuck[0]['t']:.0f} 秒")
@@ -1173,10 +1180,24 @@ h1{{font-size:clamp(30px,5vw,54px);font-weight:700;letter-spacing:-.03em;margin:
 
 /* 一级区块：大标题。原来 h2 只有 14px，比正文还小，层级是反的
    （老板 2026-07-20：「标题子标题正文字体大小差不多，有点看不明白」）。 */
-h2{{font-size:clamp(23px,3vw,31px);font-weight:700;color:var(--ink);
-  letter-spacing:-.02em;margin:clamp(56px,7vw,84px) 0 16px;
-  padding-bottom:14px;border-bottom:1px solid var(--line);display:flex;
-  justify-content:space-between;align-items:baseline;gap:16px;line-height:1.15}}
+/* 概览区（总）：标题 + 一句话结论 + KPI，视觉上成块，与下方细节拉开 */
+.overview{{padding-bottom:clamp(30px,4vw,44px);
+  border-bottom:1px solid var(--line);margin-bottom:8px}}
+.detail-mark{{font-family:var(--mono);font-size:11px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--ink3);margin:clamp(40px,5vw,60px) 0 0}}
+/* 主题组分隔（分）：大号编号 + 组名，统领组内 2 个 h2 */
+.grp{{display:flex;align-items:center;gap:16px;
+  margin:clamp(38px,5vw,56px) 0 4px}}
+.grp-n{{font-size:clamp(34px,5vw,54px);font-weight:700;line-height:1;
+  letter-spacing:-.05em;color:var(--accent)}}
+.grp-t{{font-size:clamp(20px,2.6vw,27px);font-weight:700;letter-spacing:-.02em;
+  line-height:1.1}}
+.grp-s{{font-size:12px;color:var(--ink3);margin-top:3px}}
+/* 组内区块标题：比组标题小一档，靠组来分层 */
+h2{{font-size:clamp(16px,1.9vw,20px);font-weight:700;color:var(--ink2);
+  letter-spacing:-.01em;margin:clamp(28px,3.5vw,44px) 0 14px;
+  padding-bottom:11px;border-bottom:1px solid var(--line);display:flex;
+  justify-content:space-between;align-items:baseline;gap:16px;line-height:1.2}}
 h2 .cnt{{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:400;
   letter-spacing:.06em;white-space:nowrap;flex:none}}
 .h2t{{display:inline-flex;align-items:center;gap:9px;min-width:0}}
@@ -1197,10 +1218,6 @@ h2 .cnt{{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:40
   z-index:40;box-shadow:0 10px 34px rgba(0,0,0,.55);pointer-events:none}}
 .info:hover .tip,.info:focus-visible .tip{{opacity:1;visibility:visible}}
 .tip b{{color:var(--ink);font-weight:700}}
-/* 二级区块：次要参考数据，退成大写小标签，不跟一级抢 */
-h2.minor{{font-size:13px;font-weight:700;color:var(--ink3);letter-spacing:.2em;
-  text-transform:uppercase;margin:clamp(40px,5vw,58px) 0 14px;padding-bottom:10px}}
-h2.minor .cnt{{letter-spacing:.06em}}
 
 .kpis{{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
   border:1px solid var(--line);margin-top:40px}}
@@ -1364,23 +1381,26 @@ td.empty{{color:var(--ink3)}}
 
 <div class="wrap">
   {card_head}
-  {hero_html}
-  <p class="verdict">{verdict}</p>
+  <section class="overview">
+    {hero_html}
+    <p class="verdict">{verdict}</p>
+    <div class="kpis">
+      <div class="kpi hi"><div class="n">{C['climb_time_s']:.1f}<span class="u">s</span></div>
+        <div class="k">完攀用时</div><div class="s">{C['start_s']:.1f} → {C['end_s']:.1f}s</div></div>
+      <div class="kpi"><div class="n">{gain_val}<span class="u">{gain_unit}</span></div>
+        <div class="k">净上升</div><div class="s">{gain_sub}</div></div>
+      <div class="kpi"><div class="n">{still_str}<span class="u">%</span></div>
+        <div class="k">静止占比</div><div class="s">停着不动的时间</div></div>
+      <div class="kpi"><div class="n">{len(stuck)}<span class="u">处</span></div>
+        <div class="k">卡点</div><div class="s">最值得回看的时段</div></div>
+    </div>
+  </section>
 
-  <div class="kpis">
-    <div class="kpi hi"><div class="n">{C['climb_time_s']:.1f}<span class="u">s</span></div>
-      <div class="k">完攀用时</div><div class="s">{C['start_s']:.1f} → {C['end_s']:.1f}s</div></div>
-    <div class="kpi"><div class="n">{gain_val}<span class="u">{gain_unit}</span></div>
-      <div class="k">净上升</div><div class="s">{gain_sub}</div></div>
-    <div class="kpi"><div class="n">{still_str}<span class="u">%</span></div>
-      <div class="k">静止占比</div><div class="s">停着不动的时间</div></div>
-    <div class="kpi"><div class="n">{len(stuck)}<span class="u">处</span></div>
-      <div class="k">卡点</div><div class="s">最值得回看的时段</div></div>
-  </div>
+  <div class="detail-mark">逐项拆解</div>
 
+  {group_head("①", "卡在哪", "最该回看的时段，和整条线的节奏")}
   {h2_stuck}
   <div class="cruxes big">{stuck_cards}</div>
-
   {h2_rhythm}
   <div class="tlbox">
     <div class="tlwrap">{timeline_svg}{hotspots}</div>
@@ -1393,15 +1413,18 @@ td.empty{{color:var(--ink3)}}
     </div>
   </div>
 
+  {group_head("②", "怎么爬的", "识别到的动作，和每次出手前的停顿")}
   {moves_html}
+  {h2_prep}
+  <div class="tlbox">{prep_svg}</div>
 
+  {group_head("③", "省不省力", "锁臂时间，和左右两边的均衡")}
   {h2_arm}
   <p class="lead">{rest_head}</p>
   {rest_facts}
   <table>
     <tr><th>锁臂时段</th><th>持续</th><th>最弯</th><th>平均</th></tr>{bent_rows}
   </table>
-
   {h2_balance}
   {balance_tip}
   <div class="two">
@@ -1419,12 +1442,9 @@ td.empty{{color:var(--ink3)}}
     </div>
   </div>
 
+  {group_head("④", "顺不顺", "流畅度四项，和时间都花在哪")}
   {h2_fluency}
   <div class="mv-tiles">{fluency_tiles}</div>
-
-  {h2_prep}
-  <div class="tlbox">{prep_svg}</div>
-
   {h2_split}
   <div class="tlbox">{split_svg}</div>
 
